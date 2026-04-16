@@ -1,0 +1,44 @@
+.App {
+  min-height: 100vh;
+  background-color: #F8FAFC;
+}
+
+.App-link {
+  color: #2563EB;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.App-link:hover {
+  color: #1d4ed8;
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+input:focus {
+  outline: none;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

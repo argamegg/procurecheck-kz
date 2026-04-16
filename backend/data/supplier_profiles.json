@@ -1,0 +1,2523 @@
+[
+  {
+    "company": {
+      "bin": "010540000001",
+      "name_ru": "ТОО \"Казахстанская Строительная Компания\"",
+      "name_kz": "\"Қазақстан Құрылыс Компаниясы\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 87,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 18,
+      "total_value": 12450000000,
+      "active_contracts": 4,
+      "completed_contracts": 14,
+      "complaints_filed": 1,
+      "years_active": 12,
+      "average_contract_value": 691666667,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "kzkc-t-001",
+        "number": "ОБ-2025-003241",
+        "name_ru": "Строительство учебного корпуса",
+        "customer": "Управление строительства г. Астаны",
+        "amount": 1850000000,
+        "date": "2025-11-14",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      },
+      {
+        "id": "kzkc-t-002",
+        "number": "ОБ-2025-001187",
+        "name_ru": "Капитальный ремонт поликлиники",
+        "customer": "Управление общественного здравоохранения",
+        "amount": 642000000,
+        "date": "2025-05-03",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      },
+      {
+        "id": "kzkc-t-003",
+        "number": "ОБ-2024-008931",
+        "name_ru": "Реконструкция инженерных сетей",
+        "customer": "Акимат г. Караганды",
+        "amount": 410000000,
+        "date": "2024-09-18",
+        "status": "Не выиграл",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "kzkc-c-001",
+        "number": "950240001111/250187/00",
+        "name_ru": "Строительство учебного корпуса",
+        "customer": "Управление строительства г. Астаны",
+        "amount": 1850000000,
+        "sign_date": "2025-12-02",
+        "status": "Исполнен",
+        "execution_percent": 100
+      },
+      {
+        "id": "kzkc-c-002",
+        "number": "970540000221/250091/00",
+        "name_ru": "Капитальный ремонт поликлиники",
+        "customer": "Управление общественного здравоохранения",
+        "amount": 642000000,
+        "sign_date": "2025-05-28",
+        "status": "Действует",
+        "execution_percent": 72
+      },
+      {
+        "id": "kzkc-c-003",
+        "number": "030340004512/240778/00",
+        "name_ru": "Ремонт школы на 1200 мест",
+        "customer": "Акимат г. Шымкент",
+        "amount": 980000000,
+        "sign_date": "2024-08-09",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "kzkc-p-001",
+        "number": "Ж-2025-00114",
+        "date": "2025-05-16",
+        "complainant": "ТОО \"Integra Project\"",
+        "target": "Управление общественного здравоохранения",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на квалификационные требования к подрядчику."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Записей в реестре недобросовестных поставщиков не найдено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Большинство завершенных договоров исполнено без критических замечаний.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "low",
+        "description": "Небольшое количество жалоб, решения в пользу компании не выявили.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "010540000002",
+      "name_ru": "АО \"Алматы Телеком\"",
+      "name_kz": "\"Алматы Телеком\" АҚ",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 72,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 11,
+      "total_value": 3860000000,
+      "active_contracts": 3,
+      "completed_contracts": 8,
+      "complaints_filed": 2,
+      "years_active": 9,
+      "average_contract_value": 350909091,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "altel-t-001",
+        "number": "ОБ-2025-007781",
+        "name_ru": "Подключение видеонаблюдения в школах",
+        "customer": "Управление цифровизации г. Алматы",
+        "amount": 540000000,
+        "date": "2025-10-07",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      },
+      {
+        "id": "altel-t-002",
+        "number": "ОБ-2025-002512",
+        "name_ru": "Модернизация городской сети связи",
+        "customer": "Акимат г. Алматы",
+        "amount": 930000000,
+        "date": "2025-04-11",
+        "status": "Победа",
+        "method": "Из одного источника"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "altel-c-001",
+        "number": "750340000012/250455/00",
+        "name_ru": "Подключение видеонаблюдения в школах",
+        "customer": "Управление цифровизации г. Алматы",
+        "amount": 540000000,
+        "sign_date": "2025-10-25",
+        "status": "Действует",
+        "execution_percent": 66
+      },
+      {
+        "id": "altel-c-002",
+        "number": "750140000911/250144/00",
+        "name_ru": "Модернизация городской сети связи",
+        "customer": "Акимат г. Алматы",
+        "amount": 930000000,
+        "sign_date": "2025-04-29",
+        "status": "Действует",
+        "execution_percent": 48
+      },
+      {
+        "id": "altel-c-003",
+        "number": "990140004512/240631/00",
+        "name_ru": "Поставка каналов передачи данных",
+        "customer": "Министерство науки и высшего образования РК",
+        "amount": 310000000,
+        "sign_date": "2024-07-10",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "altel-p-001",
+        "number": "Ж-2025-00091",
+        "date": "2025-04-21",
+        "complainant": "ТОО \"Link Solutions\"",
+        "target": "Акимат г. Алматы",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена частично",
+        "description": "Жалоба на порядок оценки технического предложения."
+      },
+      {
+        "id": "altel-p-002",
+        "number": "Ж-2024-00641",
+        "date": "2024-09-13",
+        "complainant": "ТОО \"NetBridge\"",
+        "target": "Управление цифровизации г. Алматы",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на допуск участника к торгам."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "РНУ и иные негативные реестры не выявлены в локальной модели.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Спорность закупок",
+        "level": "medium",
+        "description": "Есть повторяющиеся жалобы от конкурентов по процедурам допуска и оценки.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Исполнение договоров",
+        "level": "medium",
+        "description": "Несколько крупных действующих контрактов еще не закрыты.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "010540000003",
+      "name_ru": "ТОО \"МегаСнаб\"",
+      "name_kz": "\"МегаСнаб\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": true,
+      "trust_score": 23,
+      "risk_level": "high",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 7,
+      "total_value": 1480000000,
+      "active_contracts": 1,
+      "completed_contracts": 3,
+      "complaints_filed": 4,
+      "years_active": 6,
+      "average_contract_value": 211428571,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "megasnab-t-001",
+        "number": "ОБ-2024-004112",
+        "name_ru": "Поставка строительных смесей",
+        "customer": "Управление строительства г. Тараз",
+        "amount": 124000000,
+        "date": "2024-06-02",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      },
+      {
+        "id": "megasnab-t-002",
+        "number": "ОБ-2025-001009",
+        "name_ru": "Поставка отделочных материалов",
+        "customer": "Акимат Жамбылской области",
+        "amount": 87000000,
+        "date": "2025-03-12",
+        "status": "Расторгнуто после заключения",
+        "method": "Из одного источника"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "megasnab-c-001",
+        "number": "080140001234/240512/00",
+        "name_ru": "Поставка строительных смесей",
+        "customer": "Управление строительства г. Тараз",
+        "amount": 124000000,
+        "sign_date": "2024-06-18",
+        "status": "Расторгнут",
+        "execution_percent": 0
+      },
+      {
+        "id": "megasnab-c-002",
+        "number": "080140001777/250044/00",
+        "name_ru": "Поставка отделочных материалов",
+        "customer": "Акимат Жамбылской области",
+        "amount": 87000000,
+        "sign_date": "2025-03-26",
+        "status": "Расторгнут",
+        "execution_percent": 10
+      },
+      {
+        "id": "megasnab-c-003",
+        "number": "050240001901/230228/00",
+        "name_ru": "Поставка хозтоваров",
+        "customer": "Отдел образования г. Тараз",
+        "amount": 36000000,
+        "sign_date": "2023-04-14",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "megasnab-p-001",
+        "number": "Ж-2025-00421",
+        "date": "2025-04-07",
+        "complainant": "Акимат Жамбылской области",
+        "target": "ТОО \"МегаСнаб\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на срыв сроков поставки и неполный объем исполнения."
+      },
+      {
+        "id": "megasnab-p-002",
+        "number": "Ж-2024-00802",
+        "date": "2024-08-11",
+        "complainant": "ТОО \"BuildMarket KZ\"",
+        "target": "Управление строительства г. Тараз",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена частично",
+        "description": "Жалоба на необоснованный допуск поставщика к процедуре закупки."
+      }
+    ],
+    "registries": [
+      {
+        "registry_type": "Реестр недобросовестных поставщиков",
+        "status": "Активен",
+        "reason": "Неисполнение обязательств по договору и подтвержденное решение уполномоченного органа.",
+        "inclusion_date": "2025-05-22",
+        "exclusion_date": "2027-05-22",
+        "source": "Local analytical dataset modeled after public goszakup registries"
+      }
+    ],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "high",
+        "description": "Компания находится в локальной модели РНУ.",
+        "impact": "Высокий"
+      },
+      {
+        "category": "Исполнение обязательств",
+        "level": "high",
+        "description": "Есть расторгнутые договоры и жалобы заказчиков по срокам исполнения.",
+        "impact": "Высокий"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "high",
+        "description": "Повторяющиеся спорные процедуры и претензии со стороны контрагентов.",
+        "impact": "Высокий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "160940014321",
+      "name_ru": "ТОО \"Астана Мед Сервис\"",
+      "name_kz": "\"Астана Мед Сервис\" ЖШС",
+      "roles": ["Поставщик", "СМП"],
+      "is_blacklisted": false,
+      "trust_score": 81,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 14,
+      "total_value": 2210000000,
+      "active_contracts": 5,
+      "completed_contracts": 9,
+      "complaints_filed": 0,
+      "years_active": 8,
+      "average_contract_value": 157857143,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "ams-t-001",
+        "number": "ОБ-2025-006881",
+        "name_ru": "Поставка медицинских расходников",
+        "customer": "Многопрофильная городская больница №2",
+        "amount": 184000000,
+        "date": "2025-09-06",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      },
+      {
+        "id": "ams-t-002",
+        "number": "ОБ-2025-002240",
+        "name_ru": "Поставка диагностических наборов",
+        "customer": "Управление здравоохранения Акмолинской области",
+        "amount": 263000000,
+        "date": "2025-03-19",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "ams-c-001",
+        "number": "710140003221/250338/00",
+        "name_ru": "Поставка медицинских расходников",
+        "customer": "Многопрофильная городская больница №2",
+        "amount": 184000000,
+        "sign_date": "2025-09-21",
+        "status": "Действует",
+        "execution_percent": 84
+      },
+      {
+        "id": "ams-c-002",
+        "number": "030140005901/250121/00",
+        "name_ru": "Поставка диагностических наборов",
+        "customer": "Управление здравоохранения Акмолинской области",
+        "amount": 263000000,
+        "sign_date": "2025-04-03",
+        "status": "Исполнен",
+        "execution_percent": 100
+      },
+      {
+        "id": "ams-c-003",
+        "number": "710540001221/240484/00",
+        "name_ru": "Поставка перевязочных материалов",
+        "customer": "Поликлиника №7",
+        "amount": 92000000,
+        "sign_date": "2024-06-30",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных записей по реестрам в локальном каталоге нет.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Высокая доля исполненных договоров и отсутствие жалоб.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Масштаб компании",
+        "level": "medium",
+        "description": "Компания относится к сегменту СМП, что требует оценки нагрузки на крупные лоты.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "201140009876",
+      "name_ru": "ТОО \"Qazaq IT Integrator\"",
+      "name_kz": "\"Qazaq IT Integrator\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 76,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 9,
+      "total_value": 5120000000,
+      "active_contracts": 4,
+      "completed_contracts": 5,
+      "complaints_filed": 1,
+      "years_active": 7,
+      "average_contract_value": 568888889,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "qii-t-001",
+        "number": "ОБ-2025-005110",
+        "name_ru": "Внедрение системы документооборота",
+        "customer": "Министерство цифрового развития РК",
+        "amount": 1450000000,
+        "date": "2025-08-22",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      },
+      {
+        "id": "qii-t-002",
+        "number": "ОБ-2024-009733",
+        "name_ru": "Сопровождение центра обработки данных",
+        "customer": "ГосТехСервис",
+        "amount": 760000000,
+        "date": "2024-12-11",
+        "status": "Победа",
+        "method": "Из одного источника"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "qii-c-001",
+        "number": "000140002919/250309/00",
+        "name_ru": "Внедрение системы документооборота",
+        "customer": "Министерство цифрового развития РК",
+        "amount": 1450000000,
+        "sign_date": "2025-09-17",
+        "status": "Действует",
+        "execution_percent": 58
+      },
+      {
+        "id": "qii-c-002",
+        "number": "750240009821/240912/00",
+        "name_ru": "Сопровождение центра обработки данных",
+        "customer": "ГосТехСервис",
+        "amount": 760000000,
+        "sign_date": "2024-12-23",
+        "status": "Действует",
+        "execution_percent": 64
+      },
+      {
+        "id": "qii-c-003",
+        "number": "000140003551/240701/00",
+        "name_ru": "Развитие аналитической панели",
+        "customer": "Национальный центр данных",
+        "amount": 420000000,
+        "sign_date": "2024-08-02",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "qii-p-001",
+        "number": "Ж-2025-00228",
+        "date": "2025-09-03",
+        "complainant": "ТОО \"Data Layer Systems\"",
+        "target": "Министерство цифрового развития РК",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на оценку опыта поставщика и квалификационных критериев."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Компания не находится в локальном РНУ.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Проектный риск",
+        "level": "medium",
+        "description": "Высокая доля крупных и длительных IT-контрактов в активной фазе.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Конкурентные споры",
+        "level": "medium",
+        "description": "Есть единичные жалобы по конкурсным критериям отбора.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "190340008765",
+      "name_ru": "ТОО \"Eurasia Logistics Group\"",
+      "name_kz": "\"Eurasia Logistics Group\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 61,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 10,
+      "total_value": 2940000000,
+      "active_contracts": 4,
+      "completed_contracts": 5,
+      "complaints_filed": 3,
+      "years_active": 5,
+      "average_contract_value": 294000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "elg-t-001",
+        "number": "ОБ-2025-004611",
+        "name_ru": "Транспортировка медицинского оборудования",
+        "customer": "СК-Фармация",
+        "amount": 318000000,
+        "date": "2025-07-15",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      },
+      {
+        "id": "elg-t-002",
+        "number": "ОБ-2025-002081",
+        "name_ru": "Логистика школьного питания",
+        "customer": "Управление образования Павлодарской области",
+        "amount": 121000000,
+        "date": "2025-03-04",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "elg-c-001",
+        "number": "000340001212/250288/00",
+        "name_ru": "Транспортировка медицинского оборудования",
+        "customer": "СК-Фармация",
+        "amount": 318000000,
+        "sign_date": "2025-08-01",
+        "status": "Действует",
+        "execution_percent": 61
+      },
+      {
+        "id": "elg-c-002",
+        "number": "550140000441/250063/00",
+        "name_ru": "Логистика школьного питания",
+        "customer": "Управление образования Павлодарской области",
+        "amount": 121000000,
+        "sign_date": "2025-03-20",
+        "status": "Расторгнут",
+        "execution_percent": 35
+      },
+      {
+        "id": "elg-c-003",
+        "number": "050540000818/240598/00",
+        "name_ru": "Доставка оргтехники по регионам",
+        "customer": "Министерство финансов РК",
+        "amount": 205000000,
+        "sign_date": "2024-07-21",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "elg-p-001",
+        "number": "Ж-2025-00377",
+        "date": "2025-05-12",
+        "complainant": "Управление образования Павлодарской области",
+        "target": "ТОО \"Eurasia Logistics Group\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на нарушение графика поставок и качество сопроводительных документов."
+      },
+      {
+        "id": "elg-p-002",
+        "number": "Ж-2024-00218",
+        "date": "2024-10-09",
+        "complainant": "ТОО \"Trans Regional\"",
+        "target": "СК-Фармация",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на методику оценки логистического опыта."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Операционный риск",
+        "level": "medium",
+        "description": "Зафиксированы жалобы по соблюдению сроков поставки.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "medium",
+        "description": "Есть один расторгнутый договор в логистическом направлении.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "В локальной модели РНУ записи не обнаружены.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "220540011234",
+      "name_ru": "ТОО \"Silk Road Supplies\"",
+      "name_kz": "\"Silk Road Supplies\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 78,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 12,
+      "total_value": 2680000000,
+      "active_contracts": 3,
+      "completed_contracts": 9,
+      "complaints_filed": 1,
+      "years_active": 10,
+      "average_contract_value": 223333333,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "srs-t-001",
+        "number": "ОБ-2025-006014",
+        "name_ru": "Поставка офисной мебели",
+        "customer": "Управление делами акимата г. Алматы",
+        "amount": 214000000,
+        "date": "2025-09-02",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "srs-c-001",
+        "number": "750140001201/250288/00",
+        "name_ru": "Поставка офисной мебели",
+        "customer": "Управление делами акимата г. Алматы",
+        "amount": 214000000,
+        "sign_date": "2025-09-20",
+        "status": "Действует",
+        "execution_percent": 81
+      },
+      {
+        "id": "srs-c-002",
+        "number": "000340001981/240447/00",
+        "name_ru": "Поставка архивных шкафов",
+        "customer": "Министерство юстиции РК",
+        "amount": 97000000,
+        "sign_date": "2024-05-27",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "srs-p-001",
+        "number": "Ж-2024-00311",
+        "date": "2024-06-14",
+        "complainant": "ТОО \"Office Point KZ\"",
+        "target": "Министерство юстиции РК",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на техническую спецификацию мебели."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Записей в РНУ не найдено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Контрактная история",
+        "level": "low",
+        "description": "Преобладают исполненные договоры по поставкам.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Конкурентные споры",
+        "level": "low",
+        "description": "Есть единичная жалоба без негативного исхода.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "180740005678",
+      "name_ru": "ТОО \"GreenBuild Engineering\"",
+      "name_kz": "\"GreenBuild Engineering\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 74,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 13,
+      "total_value": 4310000000,
+      "active_contracts": 4,
+      "completed_contracts": 8,
+      "complaints_filed": 2,
+      "years_active": 9,
+      "average_contract_value": 331538462,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "gbe-t-001",
+        "number": "ОБ-2025-004903",
+        "name_ru": "Энергоэффективная модернизация школ",
+        "customer": "Управление образования Костанайской области",
+        "amount": 880000000,
+        "date": "2025-07-28",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "gbe-c-001",
+        "number": "390140008221/250255/00",
+        "name_ru": "Энергоэффективная модернизация школ",
+        "customer": "Управление образования Костанайской области",
+        "amount": 880000000,
+        "sign_date": "2025-08-19",
+        "status": "Действует",
+        "execution_percent": 59
+      },
+      {
+        "id": "gbe-c-002",
+        "number": "390340001287/240510/00",
+        "name_ru": "Монтаж солнечных станций",
+        "customer": "Акимат г. Рудный",
+        "amount": 364000000,
+        "sign_date": "2024-06-17",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "gbe-p-001",
+        "number": "Ж-2025-00305",
+        "date": "2025-08-07",
+        "complainant": "ТОО \"Eco Systems Pro\"",
+        "target": "Управление образования Костанайской области",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена частично",
+        "description": "Жалоба на критерии оценки технической части."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Проектный риск",
+        "level": "medium",
+        "description": "Высокая доля строительно-инженерных контрактов в активной фазе.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестровых записей нет.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Спорность закупок",
+        "level": "medium",
+        "description": "Есть жалобы конкурентов по методике оценки.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "130940003210",
+      "name_ru": "ТОО \"Qostanai Agro Tech\"",
+      "name_kz": "\"Qostanai Agro Tech\" ЖШС",
+      "roles": ["Поставщик", "СМП"],
+      "is_blacklisted": false,
+      "trust_score": 69,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 8,
+      "total_value": 1260000000,
+      "active_contracts": 3,
+      "completed_contracts": 5,
+      "complaints_filed": 0,
+      "years_active": 6,
+      "average_contract_value": 157500000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "qat-t-001",
+        "number": "ОБ-2025-002914",
+        "name_ru": "Поставка сельхозтехники для колледжей",
+        "customer": "Управление образования Костанайской области",
+        "amount": 238000000,
+        "date": "2025-04-29",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "qat-c-001",
+        "number": "390140009901/250118/00",
+        "name_ru": "Поставка сельхозтехники для колледжей",
+        "customer": "Управление образования Костанайской области",
+        "amount": 238000000,
+        "sign_date": "2025-05-18",
+        "status": "Действует",
+        "execution_percent": 69
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Масштаб бизнеса",
+        "level": "medium",
+        "description": "Компания относится к сегменту СМП и работает с растущими объемами.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных записей не обнаружено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "low",
+        "description": "Жалоб и расторгнутых договоров не выявлено.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "141140007654",
+      "name_ru": "ТОО \"Steppe Security Systems\"",
+      "name_kz": "\"Steppe Security Systems\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 71,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 15,
+      "total_value": 3540000000,
+      "active_contracts": 5,
+      "completed_contracts": 10,
+      "complaints_filed": 1,
+      "years_active": 11,
+      "average_contract_value": 236000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "sss-t-001",
+        "number": "ОБ-2025-005441",
+        "name_ru": "Оснащение судов системами безопасности",
+        "customer": "Судебная администрация РК",
+        "amount": 485000000,
+        "date": "2025-08-16",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "sss-c-001",
+        "number": "000140006001/250301/00",
+        "name_ru": "Оснащение судов системами безопасности",
+        "customer": "Судебная администрация РК",
+        "amount": 485000000,
+        "sign_date": "2025-09-04",
+        "status": "Действует",
+        "execution_percent": 54
+      },
+      {
+        "id": "sss-c-002",
+        "number": "000140004911/240612/00",
+        "name_ru": "Поставка турникетов и СКУД",
+        "customer": "Министерство финансов РК",
+        "amount": 201000000,
+        "sign_date": "2024-07-12",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "sss-p-001",
+        "number": "Ж-2025-00297",
+        "date": "2025-09-11",
+        "complainant": "ТОО \"Secure Point\"",
+        "target": "Судебная администрация РК",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на квалификацию поставщика по аналогичным проектам."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная нагрузка",
+        "level": "medium",
+        "description": "Есть несколько параллельных контрактов по оборудованию безопасности.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Компания отсутствует в РНУ.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Конкурентные претензии",
+        "level": "low",
+        "description": "Зафиксирована единичная жалоба без негативного решения.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "091240004321",
+      "name_ru": "ТОО \"West Oil Service\"",
+      "name_kz": "\"West Oil Service\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 67,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 10,
+      "total_value": 6480000000,
+      "active_contracts": 4,
+      "completed_contracts": 5,
+      "complaints_filed": 2,
+      "years_active": 8,
+      "average_contract_value": 648000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "wos-t-001",
+        "number": "ОБ-2025-006551",
+        "name_ru": "Сервис нефтепромыслового оборудования",
+        "customer": "АО \"Эмбамунайгаз\"",
+        "amount": 1120000000,
+        "date": "2025-09-19",
+        "status": "Победа",
+        "method": "Из одного источника"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "wos-c-001",
+        "number": "060140001808/250366/00",
+        "name_ru": "Сервис нефтепромыслового оборудования",
+        "customer": "АО \"Эмбамунайгаз\"",
+        "amount": 1120000000,
+        "sign_date": "2025-10-03",
+        "status": "Действует",
+        "execution_percent": 47
+      },
+      {
+        "id": "wos-c-002",
+        "number": "060340001211/240590/00",
+        "name_ru": "Поставка насосных агрегатов",
+        "customer": "АО \"Озенмунайгаз\"",
+        "amount": 386000000,
+        "sign_date": "2024-07-25",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "wos-p-001",
+        "number": "Ж-2025-00409",
+        "date": "2025-10-12",
+        "complainant": "ТОО \"Caspian Field Tech\"",
+        "target": "АО \"Эмбамунайгаз\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена частично",
+        "description": "Жалоба на условия закупки по опыту сервисного обслуживания."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Отраслевой риск",
+        "level": "medium",
+        "description": "Компания работает в капиталоемком нефтесервисном сегменте.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "РНУ не выявлен.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Закупочные споры",
+        "level": "medium",
+        "description": "Есть жалобы конкурентов на конкурсные требования.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "171040008888",
+      "name_ru": "ТОО \"Digital Education Solutions\"",
+      "name_kz": "\"Digital Education Solutions\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 82,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 16,
+      "total_value": 4720000000,
+      "active_contracts": 5,
+      "completed_contracts": 11,
+      "complaints_filed": 0,
+      "years_active": 7,
+      "average_contract_value": 295000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "des-t-001",
+        "number": "ОБ-2025-006731",
+        "name_ru": "Лицензии для школьной LMS",
+        "customer": "Министерство просвещения РК",
+        "amount": 690000000,
+        "date": "2025-09-30",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "des-c-001",
+        "number": "000140005313/250401/00",
+        "name_ru": "Лицензии для школьной LMS",
+        "customer": "Министерство просвещения РК",
+        "amount": 690000000,
+        "sign_date": "2025-10-17",
+        "status": "Действует",
+        "execution_percent": 76
+      },
+      {
+        "id": "des-c-002",
+        "number": "710340003141/240552/00",
+        "name_ru": "Интерактивные панели для школ",
+        "customer": "Управление образования г. Астаны",
+        "amount": 442000000,
+        "sign_date": "2024-06-22",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Высокая доля исполненных образовательных проектов.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Записей в реестрах негативного характера нет.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Масштаб внедрения",
+        "level": "medium",
+        "description": "Крупные цифровые внедрения требуют контроля сроков rollout.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "120640002345",
+      "name_ru": "ТОО \"Saryarka Food Trade\"",
+      "name_kz": "\"Saryarka Food Trade\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 64,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 9,
+      "total_value": 980000000,
+      "active_contracts": 3,
+      "completed_contracts": 5,
+      "complaints_filed": 2,
+      "years_active": 5,
+      "average_contract_value": 108888889,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "sft-t-001",
+        "number": "ОБ-2025-001771",
+        "name_ru": "Поставка продуктов питания в детсады",
+        "customer": "Отдел образования г. Караганды",
+        "amount": 96000000,
+        "date": "2025-03-01",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "sft-c-001",
+        "number": "350140001900/250072/00",
+        "name_ru": "Поставка продуктов питания в детсады",
+        "customer": "Отдел образования г. Караганды",
+        "amount": 96000000,
+        "sign_date": "2025-03-18",
+        "status": "Действует",
+        "execution_percent": 63
+      },
+      {
+        "id": "sft-c-002",
+        "number": "350540002011/240355/00",
+        "name_ru": "Поставка бакалеи",
+        "customer": "Школа-лицей №27",
+        "amount": 41000000,
+        "sign_date": "2024-04-15",
+        "status": "Расторгнут",
+        "execution_percent": 26
+      }
+    ],
+    "complaints": [
+      {
+        "id": "sft-p-001",
+        "number": "Ж-2024-00166",
+        "date": "2024-05-21",
+        "complainant": "Школа-лицей №27",
+        "target": "ТОО \"Saryarka Food Trade\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на качество части поставленной продукции."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Операционный риск",
+        "level": "medium",
+        "description": "Есть расторгнутый договор в продовольственном сегменте.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Качество поставки",
+        "level": "medium",
+        "description": "Были претензии по качеству продукции.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Компания не состоит в РНУ.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "200940014567",
+      "name_ru": "ТОО \"KZ Road Maintenance\"",
+      "name_kz": "\"KZ Road Maintenance\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 80,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 17,
+      "total_value": 7820000000,
+      "active_contracts": 6,
+      "completed_contracts": 11,
+      "complaints_filed": 1,
+      "years_active": 13,
+      "average_contract_value": 460000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "krm-t-001",
+        "number": "ОБ-2025-007102",
+        "name_ru": "Содержание автомобильных дорог областного значения",
+        "customer": "Управление пассажирского транспорта и автомобильных дорог",
+        "amount": 1240000000,
+        "date": "2025-10-13",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "krm-c-001",
+        "number": "710140008010/250488/00",
+        "name_ru": "Содержание автомобильных дорог областного значения",
+        "customer": "Управление пассажирского транспорта и автомобильных дорог",
+        "amount": 1240000000,
+        "sign_date": "2025-11-02",
+        "status": "Действует",
+        "execution_percent": 52
+      },
+      {
+        "id": "krm-c-002",
+        "number": "710540001101/240700/00",
+        "name_ru": "Ямочный ремонт дорог",
+        "customer": "Акимат г. Астаны",
+        "amount": 522000000,
+        "sign_date": "2024-08-05",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "krm-p-001",
+        "number": "Ж-2025-00480",
+        "date": "2025-11-11",
+        "complainant": "ТОО \"Road Expert KZ\"",
+        "target": "Управление пассажирского транспорта и автомобильных дорог",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на оценку опыта по дорожным работам."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Большая доля выполненных дорожных контрактов.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Масштаб обязательств",
+        "level": "medium",
+        "description": "Компания одновременно ведет несколько инфраструктурных объектов.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестровых событий не найдено.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "160140006789",
+      "name_ru": "ТОО \"Astana Clean City\"",
+      "name_kz": "\"Astana Clean City\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 73,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 14,
+      "total_value": 2120000000,
+      "active_contracts": 4,
+      "completed_contracts": 9,
+      "complaints_filed": 1,
+      "years_active": 7,
+      "average_contract_value": 151428571,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "acc-t-001",
+        "number": "ОБ-2025-004008",
+        "name_ru": "Уборка общественных пространств",
+        "customer": "Акимат района Есиль",
+        "amount": 311000000,
+        "date": "2025-06-18",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "acc-c-001",
+        "number": "710140007010/250214/00",
+        "name_ru": "Уборка общественных пространств",
+        "customer": "Акимат района Есиль",
+        "amount": 311000000,
+        "sign_date": "2025-07-03",
+        "status": "Действует",
+        "execution_percent": 74
+      },
+      {
+        "id": "acc-c-002",
+        "number": "710340008881/240409/00",
+        "name_ru": "Зимнее содержание тротуаров",
+        "customer": "Акимат района Нура",
+        "amount": 148000000,
+        "sign_date": "2024-05-09",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "acc-p-001",
+        "number": "Ж-2025-00204",
+        "date": "2025-07-29",
+        "complainant": "ТОО \"Eco City Service\"",
+        "target": "Акимат района Есиль",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на критерии оценки материально-технической базы."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Операционный риск",
+        "level": "medium",
+        "description": "Контракты по уборке зависят от сезонной нагрузки.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных записей по реестрам нет.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Конкурентные претензии",
+        "level": "low",
+        "description": "Есть единичная жалоба без негативного решения.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "180340010012",
+      "name_ru": "ТОО \"MedPharm Distribution\"",
+      "name_kz": "\"MedPharm Distribution\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 83,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 19,
+      "total_value": 5380000000,
+      "active_contracts": 6,
+      "completed_contracts": 13,
+      "complaints_filed": 0,
+      "years_active": 10,
+      "average_contract_value": 283157895,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "mpd-t-001",
+        "number": "ОБ-2025-006302",
+        "name_ru": "Поставка антибиотиков и расходников",
+        "customer": "Управление здравоохранения г. Шымкент",
+        "amount": 402000000,
+        "date": "2025-09-12",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "mpd-c-001",
+        "number": "790140004002/250351/00",
+        "name_ru": "Поставка антибиотиков и расходников",
+        "customer": "Управление здравоохранения г. Шымкент",
+        "amount": 402000000,
+        "sign_date": "2025-10-01",
+        "status": "Действует",
+        "execution_percent": 82
+      },
+      {
+        "id": "mpd-c-002",
+        "number": "030340002221/240660/00",
+        "name_ru": "Поставка перевязочных материалов",
+        "customer": "Многопрофильная больница г. Туркестан",
+        "amount": 164000000,
+        "sign_date": "2024-07-29",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных записей по поставщику не выявлено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Хорошая история исполнения медицинских поставок.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Секторный риск",
+        "level": "medium",
+        "description": "Медицинские поставки чувствительны к срокам и сертификации.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "150240007777",
+      "name_ru": "ТОО \"Industrial Pump Systems\"",
+      "name_kz": "\"Industrial Pump Systems\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 58,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 7,
+      "total_value": 1740000000,
+      "active_contracts": 2,
+      "completed_contracts": 4,
+      "complaints_filed": 2,
+      "years_active": 6,
+      "average_contract_value": 248571429,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "ips-t-001",
+        "number": "ОБ-2025-003504",
+        "name_ru": "Поставка насосов для котельных",
+        "customer": "Управление энергетики Павлодарской области",
+        "amount": 287000000,
+        "date": "2025-05-23",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "ips-c-001",
+        "number": "550140002322/250184/00",
+        "name_ru": "Поставка насосов для котельных",
+        "customer": "Управление энергетики Павлодарской области",
+        "amount": 287000000,
+        "sign_date": "2025-06-07",
+        "status": "Действует",
+        "execution_percent": 57
+      },
+      {
+        "id": "ips-c-002",
+        "number": "550340001010/240211/00",
+        "name_ru": "Поставка насосных станций",
+        "customer": "ТОО \"Павлодар Су Арнасы\"",
+        "amount": 196000000,
+        "sign_date": "2024-03-26",
+        "status": "Расторгнут",
+        "execution_percent": 19
+      }
+    ],
+    "complaints": [
+      {
+        "id": "ips-p-001",
+        "number": "Ж-2024-00102",
+        "date": "2024-04-24",
+        "complainant": "ТОО \"Павлодар Су Арнасы\"",
+        "target": "ТОО \"Industrial Pump Systems\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на задержку поставки и замену части оборудования."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Операционный риск",
+        "level": "medium",
+        "description": "Есть расторгнутый договор и претензии по срокам поставки.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Компания не включена в РНУ.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "medium",
+        "description": "Часть контрактов требует дополнительной проверки по исполнению.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "191140009001",
+      "name_ru": "ТОО \"Kokshe Service Group\"",
+      "name_kz": "\"Kokshe Service Group\" ЖШС",
+      "roles": ["Поставщик", "СМП"],
+      "is_blacklisted": false,
+      "trust_score": 75,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 11,
+      "total_value": 1430000000,
+      "active_contracts": 3,
+      "completed_contracts": 8,
+      "complaints_filed": 0,
+      "years_active": 5,
+      "average_contract_value": 130000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "ksg-t-001",
+        "number": "ОБ-2025-004440",
+        "name_ru": "Техобслуживание административных зданий",
+        "customer": "Акимат Акмолинской области",
+        "amount": 176000000,
+        "date": "2025-06-29",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "ksg-c-001",
+        "number": "110140007901/250209/00",
+        "name_ru": "Техобслуживание административных зданий",
+        "customer": "Акимат Акмолинской области",
+        "amount": 176000000,
+        "sign_date": "2025-07-15",
+        "status": "Действует",
+        "execution_percent": 73
+      },
+      {
+        "id": "ksg-c-002",
+        "number": "110340004821/240341/00",
+        "name_ru": "Клининг и хозяйственное обслуживание",
+        "customer": "Управление финансов Акмолинской области",
+        "amount": 92000000,
+        "sign_date": "2024-04-22",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Репутационный фон",
+        "level": "low",
+        "description": "Жалоб и негативных записей не выявлено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Масштаб бизнеса",
+        "level": "medium",
+        "description": "Компания развивает портфель сервисных контрактов в сегменте СМП.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Исполнение договоров стабильное.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "210440005555",
+      "name_ru": "ТОО \"Smart Infra Analytics\"",
+      "name_kz": "\"Smart Infra Analytics\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 77,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 8,
+      "total_value": 2640000000,
+      "active_contracts": 4,
+      "completed_contracts": 4,
+      "complaints_filed": 1,
+      "years_active": 4,
+      "average_contract_value": 330000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "sia-t-001",
+        "number": "ОБ-2025-005980",
+        "name_ru": "Аналитика транспортных потоков",
+        "customer": "Управление транспорта г. Алматы",
+        "amount": 520000000,
+        "date": "2025-08-31",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "sia-c-001",
+        "number": "750140009808/250347/00",
+        "name_ru": "Аналитика транспортных потоков",
+        "customer": "Управление транспорта г. Алматы",
+        "amount": 520000000,
+        "sign_date": "2025-09-22",
+        "status": "Действует",
+        "execution_percent": 49
+      },
+      {
+        "id": "sia-c-002",
+        "number": "750340007119/240774/00",
+        "name_ru": "Панель мониторинга городских данных",
+        "customer": "Центр развития Алматы",
+        "amount": 248000000,
+        "sign_date": "2024-08-17",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "sia-p-001",
+        "number": "Ж-2025-00358",
+        "date": "2025-09-15",
+        "complainant": "ТОО \"Urban Metrics\"",
+        "target": "Управление транспорта г. Алматы",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на критерии оценки цифровой платформы."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Проектный риск",
+        "level": "medium",
+        "description": "Значительная часть контрактов связана с IT-внедрениями в активной фазе.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестров не обнаружено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Конкурентные споры",
+        "level": "low",
+        "description": "Есть единичная жалоба без негативного исхода.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "170540003333",
+      "name_ru": "ТОО \"KazEnergy Control\"",
+      "name_kz": "\"KazEnergy Control\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 79,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 13,
+      "total_value": 3890000000,
+      "active_contracts": 4,
+      "completed_contracts": 9,
+      "complaints_filed": 0,
+      "years_active": 9,
+      "average_contract_value": 299230769,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "kec-t-001",
+        "number": "ОБ-2025-005118",
+        "name_ru": "Поставка счетчиков и датчиков учета",
+        "customer": "АО \"KEGOC\"",
+        "amount": 436000000,
+        "date": "2025-08-03",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "kec-c-001",
+        "number": "710140004141/250292/00",
+        "name_ru": "Поставка счетчиков и датчиков учета",
+        "customer": "АО \"KEGOC\"",
+        "amount": 436000000,
+        "sign_date": "2025-08-24",
+        "status": "Действует",
+        "execution_percent": 68
+      },
+      {
+        "id": "kec-c-002",
+        "number": "710340005992/240688/00",
+        "name_ru": "Система мониторинга подстанций",
+        "customer": "АО \"Самрук-Энерго\"",
+        "amount": 311000000,
+        "sign_date": "2024-08-01",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Исполнение контрактов в энергетическом сегменте устойчивое.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Секторный риск",
+        "level": "medium",
+        "description": "Проекты зависят от технической приемки и интеграции оборудования.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестровых событий нет.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "150940006666",
+      "name_ru": "ТОО \"Northern Medical Devices\"",
+      "name_kz": "\"Northern Medical Devices\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 66,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 6,
+      "total_value": 1180000000,
+      "active_contracts": 2,
+      "completed_contracts": 3,
+      "complaints_filed": 1,
+      "years_active": 4,
+      "average_contract_value": 196666667,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "nmd-t-001",
+        "number": "ОБ-2025-003870",
+        "name_ru": "Поставка аппаратов ЭКГ",
+        "customer": "Управление здравоохранения СКО",
+        "amount": 154000000,
+        "date": "2025-06-07",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "nmd-c-001",
+        "number": "590140004111/250166/00",
+        "name_ru": "Поставка аппаратов ЭКГ",
+        "customer": "Управление здравоохранения СКО",
+        "amount": 154000000,
+        "sign_date": "2025-06-25",
+        "status": "Действует",
+        "execution_percent": 62
+      },
+      {
+        "id": "nmd-c-002",
+        "number": "590340001019/240288/00",
+        "name_ru": "Поставка мониторов пациента",
+        "customer": "Областная больница Петропавловска",
+        "amount": 99000000,
+        "sign_date": "2024-04-04",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "nmd-p-001",
+        "number": "Ж-2025-00255",
+        "date": "2025-07-02",
+        "complainant": "ТОО \"BioTech Trade\"",
+        "target": "Управление здравоохранения СКО",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на подтверждение аналогичного опыта."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Масштаб бизнеса",
+        "level": "medium",
+        "description": "Компания находится в фазе роста в медицинском сегменте.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных записей не найдено.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Поставочный риск",
+        "level": "medium",
+        "description": "Поставка медтехники чувствительна к логистике и сертификации.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "210140004444",
+      "name_ru": "ТОО \"Urban Transport Service\"",
+      "name_kz": "\"Urban Transport Service\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": true,
+      "trust_score": 28,
+      "risk_level": "high",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 5,
+      "total_value": 2010000000,
+      "active_contracts": 1,
+      "completed_contracts": 2,
+      "complaints_filed": 3,
+      "years_active": 5,
+      "average_contract_value": 402000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "uts-t-001",
+        "number": "ОБ-2024-007110",
+        "name_ru": "Сервис городских автобусных парков",
+        "customer": "ТОО \"City Transportation Systems\"",
+        "amount": 620000000,
+        "date": "2024-11-09",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "uts-c-001",
+        "number": "750140006661/240855/00",
+        "name_ru": "Сервис городских автобусных парков",
+        "customer": "ТОО \"City Transportation Systems\"",
+        "amount": 620000000,
+        "sign_date": "2024-12-03",
+        "status": "Расторгнут",
+        "execution_percent": 12
+      }
+    ],
+    "complaints": [
+      {
+        "id": "uts-p-001",
+        "number": "Ж-2025-00184",
+        "date": "2025-02-12",
+        "complainant": "ТОО \"City Transportation Systems\"",
+        "target": "ТОО \"Urban Transport Service\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на срыв сроков обслуживания и отсутствие резервных экипажей."
+      }
+    ],
+    "registries": [
+      {
+        "registry_type": "Реестр недобросовестных поставщиков",
+        "status": "Активен",
+        "reason": "Расторжение договора по вине поставщика и решение уполномоченного органа.",
+        "inclusion_date": "2025-03-04",
+        "exclusion_date": "2027-03-04",
+        "source": "Local analytical dataset modeled after public goszakup registries"
+      }
+    ],
+    "risk_indicators": [
+      {
+        "category": "Комплаенс-риск",
+        "level": "high",
+        "description": "Компания присутствует в локальной модели РНУ.",
+        "impact": "Высокий"
+      },
+      {
+        "category": "Исполнение обязательств",
+        "level": "high",
+        "description": "Есть расторгнутый крупный договор и претензии заказчика.",
+        "impact": "Высокий"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "high",
+        "description": "Повторяющиеся жалобы по качеству сервиса.",
+        "impact": "Высокий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "110740005432",
+      "name_ru": "ТОО \"Aqmola Agro Supply\"",
+      "name_kz": "\"Aqmola Agro Supply\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 72,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 10,
+      "total_value": 1340000000,
+      "active_contracts": 3,
+      "completed_contracts": 7,
+      "complaints_filed": 0,
+      "years_active": 8,
+      "average_contract_value": 134000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "aas-t-001",
+        "number": "ОБ-2025-002612",
+        "name_ru": "Поставка семян и удобрений",
+        "customer": "Аграрный колледж Кокшетау",
+        "amount": 118000000,
+        "date": "2025-04-16",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "aas-c-001",
+        "number": "110140003219/250095/00",
+        "name_ru": "Поставка семян и удобрений",
+        "customer": "Аграрный колледж Кокшетау",
+        "amount": 118000000,
+        "sign_date": "2025-05-03",
+        "status": "Действует",
+        "execution_percent": 79
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Секторный риск",
+        "level": "medium",
+        "description": "Поставки зависят от сезонности сельхозработ.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Стабильная история исполненных поставок.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестровых записей не выявлено.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "081140007654",
+      "name_ru": "ТОО \"Caspian Marine Supplies\"",
+      "name_kz": "\"Caspian Marine Supplies\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 70,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 9,
+      "total_value": 2870000000,
+      "active_contracts": 3,
+      "completed_contracts": 5,
+      "complaints_filed": 1,
+      "years_active": 7,
+      "average_contract_value": 318888889,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "cms-t-001",
+        "number": "ОБ-2025-005450",
+        "name_ru": "Поставка судового оборудования",
+        "customer": "АО \"Казмортрансфлот\"",
+        "amount": 528000000,
+        "date": "2025-08-18",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "cms-c-001",
+        "number": "080140004521/250322/00",
+        "name_ru": "Поставка судового оборудования",
+        "customer": "АО \"Казмортрансфлот\"",
+        "amount": 528000000,
+        "sign_date": "2025-09-10",
+        "status": "Действует",
+        "execution_percent": 58
+      }
+    ],
+    "complaints": [
+      {
+        "id": "cms-p-001",
+        "number": "Ж-2025-00326",
+        "date": "2025-09-01",
+        "complainant": "ТОО \"Marine Tech Caspian\"",
+        "target": "АО \"Казмортрансфлот\"",
+        "status": "Рассмотрена",
+        "decision": "Отклонена",
+        "description": "Жалоба на подтверждение сервисного центра и склада запчастей."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Отраслевой риск",
+        "level": "medium",
+        "description": "Морские поставки чувствительны к логистике и импортным срокам.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестров нет.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Репутационный фон",
+        "level": "low",
+        "description": "Имеется единичная жалоба без негативного решения.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "101240008181",
+      "name_ru": "ТОО \"Zhetysu Water Tech\"",
+      "name_kz": "\"Zhetysu Water Tech\" ЖШС",
+      "roles": ["Поставщик", "Подрядчик"],
+      "is_blacklisted": false,
+      "trust_score": 68,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 12,
+      "total_value": 2410000000,
+      "active_contracts": 4,
+      "completed_contracts": 7,
+      "complaints_filed": 1,
+      "years_active": 6,
+      "average_contract_value": 200833333,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "zwt-t-001",
+        "number": "ОБ-2025-004701",
+        "name_ru": "Модернизация водоочистных станций",
+        "customer": "ГУ \"Жетысу Су\"",
+        "amount": 372000000,
+        "date": "2025-07-11",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "zwt-c-001",
+        "number": "190140004707/250224/00",
+        "name_ru": "Модернизация водоочистных станций",
+        "customer": "ГУ \"Жетысу Су\"",
+        "amount": 372000000,
+        "sign_date": "2025-07-29",
+        "status": "Действует",
+        "execution_percent": 55
+      },
+      {
+        "id": "zwt-c-002",
+        "number": "190340001161/240499/00",
+        "name_ru": "Поставка реагентов для очистки воды",
+        "customer": "КГП \"Талдыкорган Су\"",
+        "amount": 96000000,
+        "sign_date": "2024-06-02",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [
+      {
+        "id": "zwt-p-001",
+        "number": "Ж-2025-00301",
+        "date": "2025-08-04",
+        "complainant": "ТОО \"Hydro Project Asia\"",
+        "target": "ГУ \"Жетысу Су\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена частично",
+        "description": "Жалоба на требования к техническим специалистам проекта."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Проектный риск",
+        "level": "medium",
+        "description": "Инженерные объекты по воде требуют контроля качества и сроков.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Компания не включена в негативные реестры.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Спорность закупок",
+        "level": "medium",
+        "description": "Есть единичная жалоба по квалификационным критериям.",
+        "impact": "Средний"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "070940002929",
+      "name_ru": "ТОО \"West Kazakhstan IT Hub\"",
+      "name_kz": "\"West Kazakhstan IT Hub\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 74,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 10,
+      "total_value": 2310000000,
+      "active_contracts": 4,
+      "completed_contracts": 6,
+      "complaints_filed": 0,
+      "years_active": 5,
+      "average_contract_value": 231000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "wkh-t-001",
+        "number": "ОБ-2025-005017",
+        "name_ru": "Сопровождение региональной ERP",
+        "customer": "Акимат ЗКО",
+        "amount": 284000000,
+        "date": "2025-08-01",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "wkh-c-001",
+        "number": "270140003933/250296/00",
+        "name_ru": "Сопровождение региональной ERP",
+        "customer": "Акимат ЗКО",
+        "amount": 284000000,
+        "sign_date": "2025-08-22",
+        "status": "Действует",
+        "execution_percent": 71
+      },
+      {
+        "id": "wkh-c-002",
+        "number": "270340001555/240641/00",
+        "name_ru": "Разработка кадрового модуля",
+        "customer": "Управление цифровизации ЗКО",
+        "amount": 141000000,
+        "sign_date": "2024-07-18",
+        "status": "Исполнен",
+        "execution_percent": 100
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Исполнение IT-контрактов стабильное.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Проектный риск",
+        "level": "medium",
+        "description": "Есть действующие внедрения, требующие длительной поддержки.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативные записи не обнаружены.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "050440001515",
+      "name_ru": "ТОО \"South Build Materials\"",
+      "name_kz": "\"South Build Materials\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 62,
+      "risk_level": "medium",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 8,
+      "total_value": 1160000000,
+      "active_contracts": 2,
+      "completed_contracts": 5,
+      "complaints_filed": 1,
+      "years_active": 6,
+      "average_contract_value": 145000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "sbm-t-001",
+        "number": "ОБ-2025-002903",
+        "name_ru": "Поставка цемента и сухих смесей",
+        "customer": "Акимат Туркестанской области",
+        "amount": 129000000,
+        "date": "2025-04-27",
+        "status": "Победа",
+        "method": "Запрос ценовых предложений"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "sbm-c-001",
+        "number": "610140004123/250133/00",
+        "name_ru": "Поставка цемента и сухих смесей",
+        "customer": "Акимат Туркестанской области",
+        "amount": 129000000,
+        "sign_date": "2025-05-11",
+        "status": "Действует",
+        "execution_percent": 67
+      },
+      {
+        "id": "sbm-c-002",
+        "number": "610340000771/240188/00",
+        "name_ru": "Поставка плитки и клея",
+        "customer": "Управление строительства Туркестанской области",
+        "amount": 88000000,
+        "sign_date": "2024-03-14",
+        "status": "Расторгнут",
+        "execution_percent": 28
+      }
+    ],
+    "complaints": [
+      {
+        "id": "sbm-p-001",
+        "number": "Ж-2024-00084",
+        "date": "2024-04-18",
+        "complainant": "Управление строительства Туркестанской области",
+        "target": "ТОО \"South Build Materials\"",
+        "status": "Рассмотрена",
+        "decision": "Удовлетворена",
+        "description": "Жалоба на отклонение части поставки от утвержденной спецификации."
+      }
+    ],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Качество поставки",
+        "level": "medium",
+        "description": "Есть претензия по соответствию строительных материалов.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Операционный риск",
+        "level": "medium",
+        "description": "Зафиксирован расторгнутый договор.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "В РНУ компания не включена.",
+        "impact": "Низкий"
+      }
+    ]
+  },
+  {
+    "company": {
+      "bin": "061140008080",
+      "name_ru": "ТОО \"Atyrau Safety Equipment\"",
+      "name_kz": "\"Atyrau Safety Equipment\" ЖШС",
+      "roles": ["Поставщик"],
+      "is_blacklisted": false,
+      "trust_score": 76,
+      "risk_level": "low",
+      "last_updated": "2026-04-16T00:00:00+00:00"
+    },
+    "summary": {
+      "total_contracts": 11,
+      "total_value": 1980000000,
+      "active_contracts": 3,
+      "completed_contracts": 8,
+      "complaints_filed": 0,
+      "years_active": 7,
+      "average_contract_value": 180000000,
+      "data_source": "Local analytical dataset modeled after public goszakup registries"
+    },
+    "tenders": [
+      {
+        "id": "ase-t-001",
+        "number": "ОБ-2025-004990",
+        "name_ru": "Поставка СИЗ для производственных предприятий",
+        "customer": "АО \"КазТрансОйл\"",
+        "amount": 231000000,
+        "date": "2025-07-31",
+        "status": "Победа",
+        "method": "Открытый конкурс"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "ase-c-001",
+        "number": "060140005551/250298/00",
+        "name_ru": "Поставка СИЗ для производственных предприятий",
+        "customer": "АО \"КазТрансОйл\"",
+        "amount": 231000000,
+        "sign_date": "2025-08-20",
+        "status": "Действует",
+        "execution_percent": 72
+      }
+    ],
+    "complaints": [],
+    "registries": [],
+    "risk_indicators": [
+      {
+        "category": "Контрактная дисциплина",
+        "level": "low",
+        "description": "Поставка СИЗ исполняется стабильно.",
+        "impact": "Низкий"
+      },
+      {
+        "category": "Секторный риск",
+        "level": "medium",
+        "description": "Промышленный сегмент чувствителен к сертификации и срокам поставок.",
+        "impact": "Средний"
+      },
+      {
+        "category": "Комплаенс-риск",
+        "level": "low",
+        "description": "Негативных реестровых событий нет.",
+        "impact": "Низкий"
+      }
+    ]
+  }
+]
