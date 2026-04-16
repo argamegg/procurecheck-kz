@@ -17,11 +17,16 @@ import {
   AlertTriangle,
   TrendingUp,
   Calendar,
-  DollarSign,
   ShieldAlert,
   Network,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const TengeIcon = ({ className = '' }) => (
+  <span className={`inline-flex items-center justify-center text-lg font-semibold leading-none ${className}`}>
+    ₸
+  </span>
+);
 
 export default function SupplierProfile() {
   const { bin } = useParams();
@@ -84,7 +89,7 @@ export default function SupplierProfile() {
         <MetricCard
           label="Общая стоимость"
           value={formatCurrency(summary.total_value)}
-          icon={<DollarSign className="w-5 h-5" strokeWidth={1.5} />}
+          icon={<TengeIcon className="w-5 h-5 text-slate-400" />}
         />
         <MetricCard
           label="Активные контракты"
