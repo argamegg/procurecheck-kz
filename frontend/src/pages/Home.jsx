@@ -6,26 +6,65 @@ import { SearchInput } from '@/components/shared/SearchInput';
 import { InfoCard, MetricCard } from '@/components/shared/Cards';
 import { PrimaryButton, SecondaryButton } from '@/components/shared/Buttons';
 import { RoleBadge, RiskBadge } from '@/components/shared/Badges';
-import { companiesAPI } from '@/utils/api';
+import { companiesAPI, dashboardAPI } from '@/utils/api';
+import { getSearchHistory } from '@/utils/auth';
 import { Building2, FileText, AlertTriangle, TrendingUp, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [companiesPreview, setCompaniesPreview] = useState([]);
+  const [catalogPreview, setCatalogPreview] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    total_companies: 0,
+    total_tenders: 0,
+    blacklisted_companies: 0,
+    total_contract_value: 0,
+    average_trust_score: 0,
+  });
 
   useEffect(() => {
+    loadRecentSearches();
     loadCompaniesPreview();
+    loadDashboardStats();
   }, []);
+
+  const formatCurrencyCompact = (value) => {
+    const formatter = new Intl.NumberFormat('ru-RU', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    });
+
+    return `${formatter.format(value)} ₸`;
+  };
+
+  const loadDashboardStats = async () => {
+    try {
+      const response = await dashboardAPI.getStats();
+      setDashboardStats(response.data);
+    } catch (error) {
+      setDashboardStats({
+        total_companies: 0,
+        total_tenders: 0,
+        blacklisted_companies: 0,
+        total_contract_value: 0,
+        average_trust_score: 0,
+      });
+    }
+  };
 
   const loadCompaniesPreview = async () => {
     try {
       const response = await companiesAPI.list();
-      setCompaniesPreview((response.data.companies || []).slice(0, 5));
+      setCatalogPreview((response.data.companies || []).slice(0, 5));
     } catch (error) {
-      setCompaniesPreview([]);
+      setCatalogPreview([]);
     }
+  };
+
+  const loadRecentSearches = () => {
+    setRecentSearches(getSearchHistory());
   };
 
   const handleSearch = () => {
@@ -81,65 +120,74 @@ export default function Home() {
           <MetricCard
             data-testid="metric-total-companies"
             label="Всего компаний в базе"
-            value="18,542"
+            value={new Intl.NumberFormat('ru-RU').format(dashboardStats.total_companies)}
             icon={<Building2 className="w-5 h-5" strokeWidth={1.5} />}
-            trend="+234 за последний месяц"
+            trend="Профили из локальной аналитической базы"
           />
           <MetricCard
             data-testid="metric-active-tenders"
-            label="Активных тендеров"
-            value="1,247"
+            label="Тендеров в профилях"
+            value={new Intl.NumberFormat('ru-RU').format(dashboardStats.total_tenders)}
             icon={<FileText className="w-5 h-5" strokeWidth={1.5} />}
-            trend="89 новых сегодня"
+            trend="Суммарно по всем компаниям в базе"
           />
           <MetricCard
             data-testid="metric-blacklisted"
             label="В реестре недобросовестных"
-            value="342"
+            value={new Intl.NumberFormat('ru-RU').format(dashboardStats.blacklisted_companies)}
             icon={<AlertTriangle className="w-5 h-5" strokeWidth={1.5} />}
-            trend="12 добавлено за неделю"
+            trend={`Средний уровень доверия: ${dashboardStats.average_trust_score}/100`}
           />
           <MetricCard
             data-testid="metric-total-value"
-            label="Общая стоимость контрактов"
-            value="2.4Т ₸"
+            label="Сумма договоров в базе"
+            value={formatCurrencyCompact(dashboardStats.total_contract_value)}
             icon={<TrendingUp className="w-5 h-5" strokeWidth={1.5} />}
-            trend="+15% к прошлому году"
+            trend="Подсчитано по всем сохраненным контрактам"
           />
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Последние проверки</h3>
-          <div className="space-y-3">
-            {[
-              { bin: '010540000001', name: 'ТОО "Казахстанская Строительная Компания"', risk: 'low' },
-              { bin: '010540000002', name: 'АО "Алматы Телеком"', risk: 'medium' },
-              { bin: '010540000003', name: 'ТОО "МегаСнаб"', risk: 'high' },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                data-testid={`recent-check-${idx}`}
-                onClick={() => navigate(`/supplier/${item.bin}`)}
-                className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg border border-slate-100 cursor-pointer transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-slate-900">{item.name}</p>
-                  <p className="text-xs text-slate-500 font-mono">БИН: {item.bin}</p>
-                </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">История поиска</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Последние реально открытые карточки компаний в этом аккаунте.
+          </p>
+
+          {recentSearches.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+              <p className="text-sm font-medium text-slate-700">История пока пуста</p>
+              <p className="text-sm text-slate-500 mt-1">
+                Найдите компанию и откройте её карточку. После этого она появится здесь.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentSearches.map((item, idx) => (
                 <div
-                  className={`px-3 py-1 rounded text-xs font-medium ${
-                    item.risk === 'low'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : item.risk === 'medium'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
+                  key={item.bin}
+                  data-testid={`recent-check-${idx}`}
+                  onClick={() => navigate(`/supplier/${item.bin}`)}
+                  className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg border border-slate-100 cursor-pointer transition-colors"
                 >
-                  {item.risk === 'low' ? 'Низкий риск' : item.risk === 'medium' ? 'Средний риск' : 'Высокий риск'}
+                  <div>
+                    <p className="font-medium text-slate-900">{item.name_ru}</p>
+                    <p className="text-xs text-slate-500 font-mono">БИН: {item.bin}</p>
+                  </div>
+                  <div
+                    className={`px-3 py-1 rounded text-xs font-medium ${
+                      item.risk_level === 'low'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : item.risk_level === 'medium'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {item.risk_level === 'low' ? 'Низкий риск' : item.risk_level === 'medium' ? 'Средний риск' : 'Высокий риск'}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <InfoCard
@@ -157,7 +205,7 @@ export default function Home() {
             </p>
 
             <div className="grid gap-3">
-              {companiesPreview.map((company) => (
+              {catalogPreview.map((company) => (
                 <button
                   key={company.bin}
                   type="button"

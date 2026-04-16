@@ -26,6 +26,10 @@ export const authAPI = {
   getMe: () => apiClient.get('/auth/me'),
 };
 
+export const dashboardAPI = {
+  getStats: () => apiClient.get('/dashboard/stats'),
+};
+
 export const companiesAPI = {
   list: (params = {}) => apiClient.get('/companies', { params }),
   search: (query, type) => {

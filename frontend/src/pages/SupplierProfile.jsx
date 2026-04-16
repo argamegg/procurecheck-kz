@@ -8,6 +8,7 @@ import { RoleBadge, RegistryBadge, RiskBadge, StatusBadge } from '@/components/s
 import { SecondaryButton } from '@/components/shared/Buttons';
 import { DataTable } from '@/components/shared/DataTable';
 import { companiesAPI } from '@/utils/api';
+import { addSearchHistoryEntry } from '@/utils/auth';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -38,6 +39,7 @@ export default function SupplierProfile() {
     try {
       const response = await companiesAPI.getProfile(bin);
       setProfile(response.data);
+      addSearchHistoryEntry(response.data.company);
     } catch (error) {
       toast.error('Ошибка загрузки профиля');
     } finally {
@@ -272,12 +274,8 @@ export default function SupplierProfile() {
   );
 
   const RiskTab = () => {
-    const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
-    const riskData = [
-      { name: 'Низкий', value: company.risk_level === 'low' ? 1 : 0 },
-      { name: 'Средний', value: company.risk_level === 'medium' ? 1 : 0 },
-      { name: 'Высокий', value: company.risk_level === 'high' ? 1 : 0 },
-    ];
+    const riskAssessment = summary?.risk_assessment || {};
+    const riskFactors = riskAssessment?.factors || [];
 
     return (
       <div data-testid="risk-tab" className="space-y-6">
@@ -327,6 +325,45 @@ export default function SupplierProfile() {
             </div>
           </InfoCard>
         </div>
+
+        <InfoCard title="Как рассчитана оценка">
+          <div className="space-y-4">
+            <p className="text-sm text-slate-700">
+              {riskAssessment.headline || 'Оценка риска сформирована автоматически на основе истории компании.'}
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <SectionCard className="p-4">
+                <p className="text-xs text-slate-500 mb-1">Жалобы</p>
+                <p className="text-lg font-semibold text-slate-900">{riskAssessment.complaints ?? complaints.length}</p>
+              </SectionCard>
+              <SectionCard className="p-4">
+                <p className="text-xs text-slate-500 mb-1">Удовлетворенные жалобы</p>
+                <p className="text-lg font-semibold text-slate-900">{riskAssessment.upheld_complaints ?? 0}</p>
+              </SectionCard>
+              <SectionCard className="p-4">
+                <p className="text-xs text-slate-500 mb-1">Расторгнутые договоры</p>
+                <p className="text-lg font-semibold text-slate-900">{riskAssessment.terminated_contracts ?? 0}</p>
+              </SectionCard>
+              <SectionCard className="p-4">
+                <p className="text-xs text-slate-500 mb-1">Активные записи в РНУ</p>
+                <p className="text-lg font-semibold text-slate-900">{riskAssessment.active_registries ?? 0}</p>
+              </SectionCard>
+            </div>
+
+            <div className="space-y-2">
+              {riskFactors.map((factor, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200"
+                >
+                  <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
+                  <p className="text-sm text-slate-700">{factor}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </InfoCard>
 
         <InfoCard title="Риск-индикаторы">
           <div className="space-y-4">

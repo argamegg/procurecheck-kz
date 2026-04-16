@@ -76,6 +76,14 @@ class SearchResult(BaseModel):
     companies: List[Company]
     total: int
 
+
+class DashboardStats(BaseModel):
+    total_companies: int
+    total_tenders: int
+    blacklisted_companies: int
+    total_contract_value: float
+    average_trust_score: int
+
 class Tender(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -204,37 +212,196 @@ def build_roles(subject: Dict[str, Any]) -> List[str]:
     return roles
 
 
-def compute_trust_score(subject: Dict[str, Any], is_blacklisted: bool, contracts_count: int) -> int:
-    if is_blacklisted:
-        return 20
-
-    score = 55
-
-    if contracts_count >= 25:
-        score += 20
-    elif contracts_count >= 5:
-        score += 10
-    elif contracts_count > 0:
-        score += 5
-
-    if subject.get("mark_patronymic_supplyer") == 1:
-        score += 10
-    if subject.get("mark_patronymic_producer") == 1:
-        score += 10
-    if subject.get("mark_small_employer") == 1:
-        score -= 5
-
-    return max(15, min(95, score))
+def normalize_company_payload(company_data: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "bin": str(company_data.get("bin") or ""),
+        "name_ru": company_data.get("name_ru") or "Неизвестная компания",
+        "name_kz": company_data.get("name_kz"),
+        "roles": company_data.get("roles") or ["Участник"],
+        "last_updated": company_data.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+    }
 
 
-def compute_risk_level(is_blacklisted: bool, contracts_count: int) -> str:
-    if is_blacklisted:
-        return "high"
-    if contracts_count >= 5:
-        return "low"
-    if contracts_count > 0:
-        return "medium"
-    return "medium"
+def is_active_registry_record(registry: RegistryRecord) -> bool:
+    status = (registry.status or "").lower()
+    if "актив" in status:
+        return True
+
+    exclusion_date = parse_isoish_datetime(registry.exclusion_date)
+    if exclusion_date and exclusion_date >= datetime.now():
+        return True
+
+    return False
+
+
+def is_terminated_contract(contract: Contract) -> bool:
+    return "расторг" in (contract.status or "").lower()
+
+
+def is_positive_complaint_decision(complaint: Complaint) -> bool:
+    decision = (complaint.decision or "").lower()
+    return "удовлетвор" in decision
+
+
+def is_partial_complaint_decision(complaint: Complaint) -> bool:
+    decision = (complaint.decision or "").lower()
+    return "частично" in decision
+
+
+def compute_company_assessment(
+    company_data: Dict[str, Any],
+    contracts: List[Contract],
+    complaints: List[Complaint],
+    registries: List[RegistryRecord]
+) -> Dict[str, Any]:
+    active_registries = [registry for registry in registries if is_active_registry_record(registry)]
+    terminated_contracts = [contract for contract in contracts if is_terminated_contract(contract)]
+    completed_contracts = [contract for contract in contracts if is_completed_contract_status(contract.status)]
+    upheld_complaints = [complaint for complaint in complaints if is_positive_complaint_decision(complaint)]
+    partial_complaints = [complaint for complaint in complaints if is_partial_complaint_decision(complaint)]
+
+    total_contracts = len(contracts)
+    completed_contracts_count = len(completed_contracts)
+    terminated_contracts_count = len(terminated_contracts)
+    complaints_count = len(complaints)
+    upheld_complaints_count = len(upheld_complaints)
+    partial_complaints_count = len(partial_complaints)
+    active_registries_count = len(active_registries)
+
+    risk_points = 20
+    risk_points += active_registries_count * 45
+    risk_points += min(30, terminated_contracts_count * 14)
+    risk_points += min(18, complaints_count * 4)
+    risk_points += min(16, upheld_complaints_count * 6)
+    risk_points += min(8, partial_complaints_count * 3)
+
+    if total_contracts == 0:
+        risk_points += 8
+    if completed_contracts_count >= 5:
+        risk_points -= 8
+    if completed_contracts_count >= 10:
+        risk_points -= 4
+
+    trust_score = max(5, min(95, 100 - risk_points))
+
+    if active_registries_count > 0 or terminated_contracts_count >= 2 or trust_score < 40:
+        risk_level = "high"
+    elif complaints_count >= 2 or terminated_contracts_count == 1 or trust_score < 70:
+        risk_level = "medium"
+    else:
+        risk_level = "low"
+
+    risk_indicators: List[RiskIndicator] = []
+    risk_factors: List[str] = []
+
+    if active_registries_count > 0:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Реестр недобросовестных",
+                level="high",
+                description=f"Найдена {active_registries_count} активная запись в РНУ. Это самый сильный негативный фактор в оценке.",
+                impact="Высокий"
+            )
+        )
+        risk_factors.append(f"Компания находится в РНУ: активных записей {active_registries_count}.")
+
+    if terminated_contracts_count > 0:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Расторгнутые договоры",
+                level="high" if terminated_contracts_count >= 2 else "medium",
+                description=f"Зафиксировано расторгнутых договоров: {terminated_contracts_count}. Это снижает итоговое доверие к исполнению обязательств.",
+                impact="Высокий" if terminated_contracts_count >= 2 else "Средний"
+            )
+        )
+        risk_factors.append(f"Расторгнутых договоров: {terminated_contracts_count}.")
+
+    if complaints_count > 0:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Жалобы и споры",
+                level="high" if upheld_complaints_count >= 2 else "medium",
+                description=(
+                    f"Найдено жалоб: {complaints_count}. "
+                    f"Из них с положительным для заявителя решением: {upheld_complaints_count}."
+                ),
+                impact="Высокий" if upheld_complaints_count >= 2 else "Средний"
+            )
+        )
+        risk_factors.append(
+            f"Жалоб: {complaints_count}, из них удовлетворено полностью или частично: {upheld_complaints_count}."
+        )
+
+    history_level = "low"
+    history_impact = "Низкий"
+    if total_contracts == 0:
+        history_level = "medium"
+        history_impact = "Средний"
+        history_description = "Подтвержденной контрактной истории нет, поэтому доверие ограничено."
+        risk_factors.append("Подтвержденной контрактной истории нет.")
+    else:
+        completion_ratio = completed_contracts_count / total_contracts if total_contracts else 0
+        if completion_ratio < 0.5:
+            history_level = "medium"
+            history_impact = "Средний"
+        history_description = (
+            f"Исполнено договоров: {completed_contracts_count} из {total_contracts}. "
+            "История исполнения частично компенсирует негативные факторы."
+        )
+        risk_factors.append(f"Исполнено договоров: {completed_contracts_count} из {total_contracts}.")
+
+    risk_indicators.append(
+        RiskIndicator(
+            category="История исполнения",
+            level=history_level,
+            description=history_description,
+            impact=history_impact
+        )
+    )
+
+    risk_indicators.append(
+        RiskIndicator(
+            category="Итоговая оценка доверия",
+            level=risk_level,
+            description=(
+                f"Итоговый уровень доверия рассчитан автоматически на основе жалоб, РНУ, "
+                f"расторгнутых договоров и общей истории исполнения. Текущее значение: {trust_score}/100."
+            ),
+            impact="Высокий" if risk_level == "high" else "Средний" if risk_level == "medium" else "Низкий"
+        )
+    )
+
+    if not risk_factors:
+        risk_factors.append("Существенных негативных факторов не найдено.")
+
+    if risk_level == "high":
+        headline = "Оценка риска повышена из-за сочетания негативных событий в истории компании."
+    elif risk_level == "medium":
+        headline = "Оценка риска умеренная: есть факторы, требующие дополнительной проверки."
+    else:
+        headline = "Оценка риска низкая: критичных негативных факторов в профиле компании не найдено."
+
+    company = Company(
+        **normalize_company_payload(company_data),
+        is_blacklisted=active_registries_count > 0,
+        trust_score=trust_score,
+        risk_level=risk_level
+    )
+
+    return {
+        "company": company,
+        "risk_indicators": risk_indicators,
+        "risk_assessment": {
+            "headline": headline,
+            "factors": risk_factors,
+            "terminated_contracts": terminated_contracts_count,
+            "complaints": complaints_count,
+            "upheld_complaints": upheld_complaints_count,
+            "active_registries": active_registries_count,
+            "completed_contracts": completed_contracts_count,
+            "total_contracts": total_contracts,
+        },
+    }
 
 
 def map_subject_to_company(
@@ -242,17 +409,14 @@ def map_subject_to_company(
     is_blacklisted: bool = False,
     contracts_count: int = 0
 ) -> Company:
-    trust_score = compute_trust_score(subject, is_blacklisted, contracts_count)
-    risk_level = compute_risk_level(is_blacklisted, contracts_count)
-
     return Company(
         bin=str(subject.get("bin") or subject.get("iin") or subject.get("supplier_biin") or ""),
         name_ru=subject.get("name_ru") or subject.get("supplier_name_ru") or "Неизвестная компания",
         name_kz=subject.get("name_kz") or subject.get("supplier_name_kz"),
         roles=build_roles(subject),
         is_blacklisted=is_blacklisted,
-        trust_score=trust_score,
-        risk_level=risk_level,
+        trust_score=0,
+        risk_level="medium",
         last_updated=datetime.now(timezone.utc)
     )
 
@@ -330,57 +494,6 @@ def map_application_to_tender(application: Dict[str, Any]) -> Tender:
         status="Подана заявка" if not prot_number else f"Протокол {prot_number}",
         method="Заявка поставщика"
     )
-
-
-def build_risk_indicators(
-    company: Company,
-    contracts: List[Contract],
-    registries: List[RegistryRecord]
-) -> List[RiskIndicator]:
-    indicators: List[RiskIndicator] = []
-
-    if registries:
-        indicators.append(
-            RiskIndicator(
-                category="Комплаенс-риск",
-                level="high",
-                description="Компания найдена в реестре недобросовестных поставщиков.",
-                impact="Высокий"
-            )
-        )
-    else:
-        indicators.append(
-            RiskIndicator(
-                category="Комплаенс-риск",
-                level="low",
-                description="Записей в реестре недобросовестных поставщиков не найдено.",
-                impact="Низкий"
-            )
-        )
-
-    indicators.append(
-        RiskIndicator(
-            category="Контрактная история",
-            level="low" if len(contracts) >= 5 else "medium",
-            description=(
-                f"Найдено договоров: {len(contracts)}."
-                if contracts
-                else "По компании не найдено договоров в доступных сервисах OWS v3."
-            ),
-            impact="Средний" if contracts else "Низкий"
-        )
-    )
-
-    indicators.append(
-        RiskIndicator(
-            category="Итоговая оценка",
-            level=company.risk_level,
-            description=f"Итоговая оценка построена на основе РНУ и истории договоров. Уровень доверия: {company.trust_score}/100.",
-            impact="Высокий" if company.risk_level == "high" else "Средний" if company.risk_level == "medium" else "Низкий"
-        )
-    )
-
-    return indicators
 
 
 async def goszakup_get(
@@ -477,8 +590,10 @@ async def search_goszakup_companies(query: str) -> List[Company]:
     companies: List[Company] = []
     for subject in subject_items:
         bin_value = str(subject.get("bin") or subject.get("iin") or "")
-        is_blacklisted = bool(rnu_by_bin.get(bin_value))
-        companies.append(map_subject_to_company(subject, is_blacklisted=is_blacklisted))
+        registries = [map_rnu_to_registry(item) for item in rnu_by_bin.get(bin_value, [])]
+        company_seed = map_subject_to_company(subject, is_blacklisted=bool(registries))
+        assessment = compute_company_assessment(company_seed.model_dump(), [], [], registries)
+        companies.append(assessment["company"])
 
     return companies
 
@@ -501,16 +616,18 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
     contract_items = extract_items(contracts_payload)
     application_items = extract_items(applications_payload)
 
-    company = map_subject_to_company(
-        subject,
-        is_blacklisted=bool(rnu_items),
-        contracts_count=len(contract_items)
-    )
-
     contracts = [map_contract_to_contract(item, contract_statuses) for item in contract_items[:50]]
     registries = [map_rnu_to_registry(item) for item in rnu_items]
     tenders = [map_application_to_tender(item) for item in application_items[:20]]
     complaints: List[Complaint] = []
+
+    company_seed = map_subject_to_company(
+        subject,
+        is_blacklisted=bool(rnu_items),
+        contracts_count=len(contract_items)
+    )
+    assessment = compute_company_assessment(company_seed.model_dump(), contracts, complaints, registries)
+    company = assessment["company"]
 
     completed_contracts = sum(1 for contract in contracts if is_completed_contract_status(contract.status))
     total_value = sum(contract.amount for contract in contracts)
@@ -525,10 +642,9 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         "complaints_filed": len(complaints),
         "years_active": years_active,
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
-        "data_source": "goszakup.gov.kz OWS v3"
+        "data_source": "goszakup.gov.kz OWS v3",
+        "risk_assessment": assessment["risk_assessment"],
     }
-
-    risk_indicators = build_risk_indicators(company, contracts, registries)
 
     return SupplierProfile(
         company=company,
@@ -537,7 +653,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         contracts=contracts,
         complaints=complaints,
         registries=registries,
-        risk_indicators=risk_indicators
+        risk_indicators=assessment["risk_indicators"]
     )
 
 
@@ -545,6 +661,17 @@ async def ensure_local_supplier_profiles_seeded():
     await db.supplier_profiles.create_index("company.bin", unique=True)
     await db.supplier_profiles.create_index("company.name_ru")
     await db.supplier_profiles.create_index("company.name_kz")
+    await db.supplier_profiles.update_many(
+        {},
+        {
+            "$unset": {
+                "risk_indicators": "",
+                "company.trust_score": "",
+                "company.risk_level": "",
+                "company.is_blacklisted": "",
+            }
+        }
+    )
 
     existing_count = await db.supplier_profiles.count_documents({})
     if existing_count > 0:
@@ -555,15 +682,21 @@ async def ensure_local_supplier_profiles_seeded():
 
     prepared_profiles = []
     for profile in profiles:
+        company_payload = {
+            key: value
+            for key, value in profile.get("company", {}).items()
+            if key not in {"trust_score", "risk_level", "is_blacklisted"}
+        }
         prepared_profile = {
-            **profile,
+            **{key: value for key, value in profile.items() if key != "risk_indicators"},
+            "company": company_payload,
             "search_text": " ".join(
                 filter(
                     None,
                     [
-                        str(profile.get("company", {}).get("bin", "")),
-                        profile.get("company", {}).get("name_ru", ""),
-                        profile.get("company", {}).get("name_kz", ""),
+                        str(company_payload.get("bin", "")),
+                        company_payload.get("name_ru", ""),
+                        company_payload.get("name_kz", ""),
                     ],
                 )
             ).lower(),
@@ -590,12 +723,19 @@ async def search_local_companies(query: str) -> List[Company]:
         ]
     }
 
-    cursor = db.supplier_profiles.find(search_filter, {"_id": 0, "company": 1}).limit(SEARCH_RESULT_LIMIT)
+    cursor = db.supplier_profiles.find(
+        search_filter,
+        {"_id": 0, "company": 1, "contracts": 1, "complaints": 1, "registries": 1}
+    ).limit(SEARCH_RESULT_LIMIT)
     companies: List[Company] = []
     async for item in cursor:
         company_data = item.get("company")
         if company_data:
-            companies.append(Company(**company_data))
+            contracts = [Contract(**contract) for contract in item.get("contracts", [])]
+            complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
+            registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
+            assessment = compute_company_assessment(company_data, contracts, complaints, registries)
+            companies.append(assessment["company"])
 
     return companies
 
@@ -606,13 +746,13 @@ async def list_local_companies(
     is_blacklisted: Optional[bool] = None,
     limit: int = 100
 ) -> List[Company]:
-    filters: List[Dict[str, Any]] = []
+    mongo_filters: List[Dict[str, Any]] = []
 
     if query:
         normalized_query = query.strip()
         if normalized_query:
             regex = re.escape(normalized_query)
-            filters.append(
+            mongo_filters.append(
                 {
                     "$or": [
                         {"company.bin": {"$regex": regex}},
@@ -623,17 +763,11 @@ async def list_local_companies(
                 }
             )
 
-    if risk_level:
-        filters.append({"company.risk_level": risk_level})
-
-    if is_blacklisted is not None:
-        filters.append({"company.is_blacklisted": is_blacklisted})
-
-    mongo_filter: Dict[str, Any] = {"$and": filters} if filters else {}
+    mongo_filter: Dict[str, Any] = {"$and": mongo_filters} if mongo_filters else {}
 
     cursor = (
         db.supplier_profiles
-        .find(mongo_filter, {"_id": 0, "company": 1})
+        .find(mongo_filter, {"_id": 0, "company": 1, "contracts": 1, "complaints": 1, "registries": 1})
         .sort("company.name_ru", 1)
         .limit(limit)
     )
@@ -642,7 +776,16 @@ async def list_local_companies(
     async for item in cursor:
         company_data = item.get("company")
         if company_data:
-            companies.append(Company(**company_data))
+            contracts = [Contract(**contract) for contract in item.get("contracts", [])]
+            complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
+            registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
+            assessment = compute_company_assessment(company_data, contracts, complaints, registries)
+            company = assessment["company"]
+            if risk_level and company.risk_level != risk_level:
+                continue
+            if is_blacklisted is not None and company.is_blacklisted != is_blacklisted:
+                continue
+            companies.append(company)
 
     return companies
 
@@ -651,7 +794,73 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
     profile = await db.supplier_profiles.find_one({"company.bin": str(bin_value)}, {"_id": 0, "search_text": 0})
     if not profile:
         return None
-    return SupplierProfile(**profile)
+    contracts = [Contract(**contract) for contract in profile.get("contracts", [])]
+    complaints = [Complaint(**complaint) for complaint in profile.get("complaints", [])]
+    registries = [RegistryRecord(**registry) for registry in profile.get("registries", [])]
+    tenders = [Tender(**tender) for tender in profile.get("tenders", [])]
+
+    assessment = compute_company_assessment(profile.get("company", {}), contracts, complaints, registries)
+
+    summary = {
+        **profile.get("summary", {}),
+        "total_contracts": len(contracts),
+        "total_value": sum(contract.amount for contract in contracts),
+        "active_contracts": max(0, len(contracts) - sum(1 for contract in contracts if is_completed_contract_status(contract.status))),
+        "completed_contracts": sum(1 for contract in contracts if is_completed_contract_status(contract.status)),
+        "complaints_filed": len(complaints),
+        "average_contract_value": round(sum(contract.amount for contract in contracts) / len(contracts)) if contracts else 0,
+        "risk_assessment": assessment["risk_assessment"],
+    }
+
+    return SupplierProfile(
+        company=assessment["company"],
+        summary=summary,
+        tenders=tenders,
+        contracts=contracts,
+        complaints=complaints,
+        registries=registries,
+        risk_indicators=assessment["risk_indicators"],
+    )
+
+
+async def get_local_dashboard_stats() -> DashboardStats:
+    cursor = db.supplier_profiles.find(
+        {},
+        {"_id": 0, "company": 1, "tenders": 1, "contracts": 1, "complaints": 1, "registries": 1}
+    )
+
+    total_companies = 0
+    total_tenders = 0
+    blacklisted_companies = 0
+    total_contract_value = 0.0
+    trust_score_sum = 0
+
+    async for item in cursor:
+        total_companies += 1
+
+        tenders = [Tender(**tender) for tender in item.get("tenders", [])]
+        contracts = [Contract(**contract) for contract in item.get("contracts", [])]
+        complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
+        registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
+        assessment = compute_company_assessment(item.get("company", {}), contracts, complaints, registries)
+        company = assessment["company"]
+
+        total_tenders += len(tenders)
+        total_contract_value += sum(contract.amount for contract in contracts)
+        trust_score_sum += company.trust_score
+
+        if company.is_blacklisted:
+            blacklisted_companies += 1
+
+    average_trust_score = round(trust_score_sum / total_companies) if total_companies else 0
+
+    return DashboardStats(
+        total_companies=total_companies,
+        total_tenders=total_tenders,
+        blacklisted_companies=blacklisted_companies,
+        total_contract_value=round(total_contract_value, 2),
+        average_trust_score=average_trust_score,
+    )
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -718,6 +927,10 @@ async def api_root():
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@api_router.get("/dashboard/stats", response_model=DashboardStats)
+async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    return await get_local_dashboard_stats()
 
 @api_router.get("/companies", response_model=SearchResult)
 async def list_companies(
