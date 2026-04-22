@@ -417,6 +417,22 @@ export default function SupplierProfile() {
                 {riskAssessment.completed_contracts ?? 0}/{riskAssessment.total_contracts ?? 0}
               </p>
             </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Суммарная просрочка</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_days ?? 0} дн.</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Штрафы по актам</p>
+              <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.fine_sum ?? 0)}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Сумма договоров</p>
+              <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.contract_value ?? 0)}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Стаж участника</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.years_active ?? 0} лет</p>
+            </SectionCard>
           </div>
 
           <div className="space-y-2">

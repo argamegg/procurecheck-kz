@@ -509,6 +509,7 @@ def compute_company_assessment(
     completed_contracts = [contract for contract in contracts if is_completed_contract(contract)]
     overdue_acts = [act for act in acts if is_overdue_act(act)]
 
+    total_announcements = max(len(applications), len({application.buy_id for application in applications if application.buy_id}))
     total_contracts = len(contracts)
     applications_count = len(applications)
     completed_contracts_count = len(completed_contracts)
@@ -516,25 +517,46 @@ def compute_company_assessment(
     active_rnu_count = len(active_rnu_entries)
     overdue_acts_count = len(overdue_acts)
 
-    risk_points = 18
-    risk_points += active_rnu_count * 45
-    risk_points += min(30, terminated_contracts_count * 14)
-    risk_points += min(20, overdue_acts_count * 9)
+    total_contract_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
+    total_overdue_days = sum(max(0, int(act.day_overdue or 0)) for act in overdue_acts)
+    total_fine_sum = sum(float(act.sum_fine or 0) for act in overdue_acts)
+    years_active = max(
+        0,
+        datetime.now().year - (parse_isoish_datetime(subject_data.get("regdate")) or parse_isoish_datetime(subject_data.get("crdate")) or datetime.now()).year,
+    )
+    completion_rate = (completed_contracts_count / total_contracts) if total_contracts else 0.0
+    application_coverage = (applications_count / total_announcements) if total_announcements else 0.0
+
+    positive_points = 0.0
+    positive_points += min(18.0, completion_rate * 18.0)
+    positive_points += min(12.0, total_contract_value / 1_500_000.0)
+    positive_points += min(8.0, years_active * 0.7)
+    positive_points += min(4.0, applications_count * 1.1)
+    positive_points += min(3.0, max(0.0, application_coverage - 1.0) * 6.0)
+    positive_points += min(2.0, len(subject_data.get("oked_list") or []))
+
+    if int(subject_data.get("mark_national_company") or 0) == 1:
+        positive_points += 3.0
+    if int(subject_data.get("mark_assoc_with_disab") or 0) == 1:
+        positive_points += 2.0
+
+    negative_points = 0.0
+    negative_points += active_rnu_count * 42.0
+    negative_points += min(24.0, terminated_contracts_count * 16.0)
+    negative_points += min(16.0, overdue_acts_count * 6.0)
+    negative_points += min(10.0, total_overdue_days / 3.0)
+    negative_points += min(8.0, total_fine_sum / 50_000.0)
 
     if total_contracts == 0:
-        risk_points += 8
+        negative_points += 10.0
     if applications_count == 0:
-        risk_points += 4
-    if completed_contracts_count >= 5:
-        risk_points -= 8
-    if completed_contracts_count >= 10:
-        risk_points -= 4
+        negative_points += 6.0
 
-    trust_score = max(5, min(95, 100 - risk_points))
+    trust_score = round(max(5.0, min(95.0, 58.0 + positive_points - negative_points)))
 
-    if active_rnu_count > 0 or terminated_contracts_count >= 2 or overdue_acts_count >= 2 or trust_score < 40:
+    if active_rnu_count > 0 or terminated_contracts_count >= 2 or overdue_acts_count >= 2 or trust_score < 45:
         risk_level = "high"
-    elif terminated_contracts_count == 1 or overdue_acts_count == 1 or trust_score < 70:
+    elif terminated_contracts_count == 1 or overdue_acts_count == 1 or trust_score < 75:
         risk_level = "medium"
     else:
         risk_level = "low"
@@ -569,11 +591,16 @@ def compute_company_assessment(
             RiskIndicator(
                 category="Электронные акты",
                 level="high" if overdue_acts_count >= 2 else "medium",
-                description=f"Актов с просрочкой или штрафами: {overdue_acts_count}.",
+                description=(
+                    f"Актов с просрочкой или штрафами: {overdue_acts_count}. "
+                    f"Суммарная просрочка: {total_overdue_days} дн., штрафы: {round(total_fine_sum, 2)}."
+                ),
                 impact="Высокий" if overdue_acts_count >= 2 else "Средний",
             )
         )
-        risk_factors.append(f"Актов с просрочкой или штрафами: {overdue_acts_count}.")
+        risk_factors.append(
+            f"Актов с просрочкой или штрафами: {overdue_acts_count}, суммарная просрочка: {total_overdue_days} дн., штрафы: {round(total_fine_sum, 2)} ₸."
+        )
 
     history_level = "low"
     history_impact = "Низкий"
@@ -583,11 +610,19 @@ def compute_company_assessment(
         history_description = "Подтвержденной истории договоров в локальной модели нет."
         risk_factors.append("Подтвержденной истории договоров нет.")
     else:
-        history_description = f"Исполнено договоров: {completed_contracts_count} из {total_contracts}."
+        history_description = (
+            f"Исполнено договоров: {completed_contracts_count} из {total_contracts}. "
+            f"Доля исполнения: {round(completion_rate * 100)}%."
+        )
         if completed_contracts_count < max(1, total_contracts // 2):
             history_level = "medium"
             history_impact = "Средний"
         risk_factors.append(history_description)
+
+    if total_contracts > 0:
+        risk_factors.append(
+            f"Общая сумма договоров: {round(total_contract_value, 2)} ₸, лет активности участника: {years_active}."
+        )
 
     risk_indicators.append(
         RiskIndicator(
@@ -635,9 +670,17 @@ def compute_company_assessment(
             "terminated_contracts": terminated_contracts_count,
             "active_rnu_entries": active_rnu_count,
             "overdue_acts": overdue_acts_count,
+            "overdue_days": total_overdue_days,
+            "fine_sum": round(total_fine_sum, 2),
             "applications": applications_count,
+            "total_announcements": total_announcements,
             "completed_contracts": completed_contracts_count,
             "total_contracts": total_contracts,
+            "completion_rate": round(completion_rate * 100),
+            "contract_value": round(total_contract_value, 2),
+            "years_active": years_active,
+            "positive_points": round(positive_points, 2),
+            "negative_points": round(negative_points, 2),
         },
     }
 
