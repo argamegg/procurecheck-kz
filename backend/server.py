@@ -63,14 +63,24 @@ class LoginResponse(BaseModel):
 
 class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
+    pid: Optional[int] = None
     bin: str
     name_ru: str
     name_kz: Optional[str] = None
+    full_name_ru: Optional[str] = None
+    full_name_kz: Optional[str] = None
+    type_supplier: Optional[int] = None
+    customer: int = 0
+    organizer: int = 0
+    supplier: int = 1
     roles: List[str] = []
     is_blacklisted: bool = False
     trust_score: int = 0
     risk_level: str = "medium"
+    regdate: Optional[str] = None
+    crdate: Optional[str] = None
     last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 class SearchResult(BaseModel):
     companies: List[Company]
@@ -79,52 +89,236 @@ class SearchResult(BaseModel):
 
 class DashboardStats(BaseModel):
     total_companies: int
-    total_tenders: int
+    total_announcements: int
     blacklisted_companies: int
     total_contract_value: float
     average_trust_score: int
 
-class Tender(BaseModel):
+
+class SubjectRecord(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: str
-    number: str
+    pid: int
+    bin: str
+    iin: Optional[str] = None
+    inn: Optional[str] = None
+    unp: Optional[str] = None
+    parent_subject: Optional[str] = None
+    parent_name_kz: Optional[str] = None
+    parent_name_ru: Optional[str] = None
+    regdate: Optional[str] = None
+    crdate: Optional[str] = None
+    index_date: Optional[str] = None
+    number_reg: Optional[str] = None
+    series: Optional[str] = None
     name_ru: str
-    customer: str
-    amount: float
-    date: str
-    status: str
-    method: str
+    name_kz: Optional[str] = None
+    full_name_ru: Optional[str] = None
+    full_name_kz: Optional[str] = None
+    country_code: Optional[int] = 398
+    customer: int = 0
+    organizer: int = 0
+    mark_national_company: int = 0
+    ref_kopf_code: Optional[str] = None
+    mark_assoc_with_disab: int = 0
+    system_id: int = 3
+    supplier: int = 1
+    type_supplier: int = 1
+    krp_code: Optional[str] = None
+    oked_list: List[str] = []
+    kse_code: Optional[str] = None
+    mark_resident: int = 1
 
-class Contract(BaseModel):
+
+class SubjectAddress(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    pid: int
+    ref_source_code: int
+    address_type: int
+    address: str
+    kato_code: Optional[str] = None
+    phone: Optional[str] = None
+    country_code: Optional[int] = 398
+    date_create: Optional[str] = None
+    edit_date: Optional[str] = None
+    index_date: Optional[str] = None
+
+
+class SubjectEmployee(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    pid: int
+    iin: Optional[str] = None
+    resident: int = 1
+    fio: str
+    disabled: int = 0
+    role: int = 0
+    sys_role_id: int = 0
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    edit_date: Optional[str] = None
+    index_date: Optional[str] = None
+
+
+class RnuEntry(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
-    number: str
+    pid: int
+    supplier_biin: str
+    supplier_innunp: Optional[str] = None
+    supplier_name_ru: str
+    supplier_name_kz: Optional[str] = None
+    kato_list: List[str] = []
+    index_date: Optional[str] = None
+    customer_name_ru: Optional[str] = None
+    customer_name_kz: Optional[str] = None
+    customer_biin: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    ref_reason_id: Optional[int] = None
+    court_decision: Optional[str] = None
+
+
+class TrdBuyRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    number_anno: str
     name_ru: str
-    customer: str
-    amount: float
-    sign_date: str
-    status: str
-    execution_percent: int
+    name_kz: Optional[str] = None
+    total_sum: float
+    count_lots: int
+    ref_trade_methods_id: int
+    ref_subject_type_id: int
+    customer_bin: str
+    customer_pid: int
+    customer_name_ru: str
+    customer_name_kz: Optional[str] = None
+    org_bin: str
+    org_pid: int
+    org_name_ru: str
+    org_name_kz: Optional[str] = None
+    publish_date: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    ref_buy_status_id: int
+    system_id: int = 3
+    index_date: Optional[str] = None
 
-class Complaint(BaseModel):
+
+class TrdAppLot(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
-    number: str
-    date: str
-    complainant: str
-    target: str
-    status: str
-    decision: str
-    description: str
+    lot_id: int
+    lot_number: str
+    name_ru: str
+    quantity: float
+    price: float
+    price_offer: float
+    amount: float
+    ref_lot_status_id: int
 
-class RegistryRecord(BaseModel):
+
+class TrdAppRecord(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    registry_type: str
-    status: str
-    reason: str
-    inclusion_date: Optional[str] = None
-    exclusion_date: Optional[str] = None
-    source: str
+    id: str
+    buy_id: int
+    supplier_id: int
+    cr_fio: Optional[str] = None
+    mod_fio: Optional[str] = None
+    supplier_bin_iin: str
+    prot_id: Optional[int] = None
+    prot_number: Optional[str] = None
+    date_apply: Optional[str] = None
+    app_lots: List[TrdAppLot] = []
+
+
+class ContractRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    parent_id: Optional[int] = None
+    root_id: int
+    trd_buy_id: int
+    trd_buy_number_anno: str
+    ref_amendm_agreem_justif_id: Optional[int] = None
+    ref_contract_status_id: int
+    deleted: int = 0
+    crdate: Optional[str] = None
+    last_update_date: Optional[str] = None
+    supplier_id: int
+    supplier_biin: str
+    supplier_bik: Optional[str] = None
+    supplier_iik: Optional[str] = None
+    supplier_bank_name_kz: Optional[str] = None
+    supplier_bank_name_ru: Optional[str] = None
+    contract_number: str
+    sign_reason_doc_name: Optional[str] = None
+    sign_reason_doc_date: Optional[str] = None
+    trd_buy_itogi_date_public: Optional[str] = None
+    customer_id: int
+    customer_bin: str
+    customer_bik: Optional[str] = None
+    customer_iik: Optional[str] = None
+    customer_bank_name_kz: Optional[str] = None
+    customer_bank_name_ru: Optional[str] = None
+    customer_name_ru: Optional[str] = None
+    customer_name_kz: Optional[str] = None
+    contract_number_sys: str
+    fin_year: int
+    ref_contract_agr_form_id: Optional[int] = None
+    ref_contract_year_type_id: Optional[int] = None
+    ref_contract_type_id: Optional[int] = None
+    contract_sum: float = 0
+    contract_sum_wnds: float = 0
+    system_id: int = 3
+    index_date: Optional[str] = None
+
+
+class ContractUnitRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    contract_id: int
+    lot_id: int
+    pln_point_id: int
+    item_price: float
+    item_price_wnds: float
+    quantity: float
+    total_sum: float
+    total_sum_wnds: float
+    fact_sum: float
+    fact_sum_wnds: float
+    ks_proc: float
+    name_ru: Optional[str] = None
+
+
+class ActRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    akt_date: Optional[str] = None
+    number_act: str
+    approve_date: Optional[str] = None
+    create_date_act: Optional[str] = None
+    contract_root_id: int
+    contract_id: int
+    status_id: int
+    is_deleted: int = 0
+    day_overdue: Optional[int] = None
+    sum_avans: Optional[float] = None
+    sum_beginning: Optional[float] = None
+    sum_fine: Optional[float] = None
+    sum_previously: Optional[float] = None
+    sum_transfer: Optional[float] = None
+    create_date_gen_info: Optional[str] = None
+    status_name_ru: Optional[str] = None
+    status_name_kz: Optional[str] = None
+    supplier_id: int
+    customer_id: int
+    is_gu: int = 0
+    type_act: int = 1
+    ref_subject_type_id: int = 3
+    parent_id: Optional[int] = None
+    system_id: int = 3
+    index_date: Optional[str] = None
+
 
 class RiskIndicator(BaseModel):
     category: str
@@ -132,13 +326,19 @@ class RiskIndicator(BaseModel):
     description: str
     impact: str
 
+
 class SupplierProfile(BaseModel):
     company: Company
     summary: Dict[str, Any]
-    tenders: List[Tender]
-    contracts: List[Contract]
-    complaints: List[Complaint]
-    registries: List[RegistryRecord]
+    subject: SubjectRecord
+    subject_addresses: List[SubjectAddress]
+    subject_employees: List[SubjectEmployee]
+    trd_buys: List[TrdBuyRecord]
+    trd_apps: List[TrdAppRecord]
+    contracts: List[ContractRecord]
+    contract_units: List[ContractUnitRecord]
+    acts: List[ActRecord]
+    rnu_entries: List[RnuEntry]
     risk_indicators: List[RiskIndicator]
 
 
@@ -212,71 +412,119 @@ def build_roles(subject: Dict[str, Any]) -> List[str]:
     return roles
 
 
-def normalize_company_payload(company_data: Dict[str, Any]) -> Dict[str, Any]:
+LOCAL_CONTRACT_STATUS_LABELS = {
+    320: "На исполнении",
+    350: "Исполнен",
+    390: "Расторгнут",
+}
+
+LOCAL_BUY_STATUS_LABELS = {
+    310: "Опубликовано",
+    320: "Прием заявок",
+    340: "Итоги подведены",
+}
+
+LOCAL_TRADE_METHOD_LABELS = {
+    1: "Открытый конкурс",
+    2: "Из одного источника",
+    7: "Аукцион",
+    31: "Запрос ценовых предложений",
+}
+
+TYPE_SUPPLIER_LABELS = {
+    1: "Юридическое лицо",
+    2: "Физическое лицо",
+    3: "ИП",
+}
+
+ADDRESS_TYPE_LABELS = {
+    1: "Юридический адрес",
+    2: "Фактический адрес",
+    3: "Почтовый адрес",
+}
+
+EMPLOYEE_ROLE_LABELS = {
+    1: "Руководитель",
+    2: "Сотрудник",
+}
+
+
+def normalize_subject_payload(subject_data: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        "bin": str(company_data.get("bin") or ""),
-        "name_ru": company_data.get("name_ru") or "Неизвестная компания",
-        "name_kz": company_data.get("name_kz"),
-        "roles": company_data.get("roles") or ["Участник"],
-        "last_updated": company_data.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+        "pid": subject_data.get("pid"),
+        "bin": str(subject_data.get("bin") or subject_data.get("iin") or subject_data.get("supplier_biin") or ""),
+        "name_ru": subject_data.get("name_ru") or subject_data.get("supplier_name_ru") or "Неизвестная компания",
+        "name_kz": subject_data.get("name_kz") or subject_data.get("supplier_name_kz"),
+        "full_name_ru": subject_data.get("full_name_ru") or subject_data.get("name_ru") or subject_data.get("supplier_name_ru"),
+        "full_name_kz": subject_data.get("full_name_kz") or subject_data.get("name_kz") or subject_data.get("supplier_name_kz"),
+        "type_supplier": subject_data.get("type_supplier"),
+        "customer": int(subject_data.get("customer") or 0),
+        "organizer": int(subject_data.get("organizer") or 0),
+        "supplier": int(subject_data.get("supplier") or 1),
+        "roles": build_roles(subject_data),
+        "regdate": format_date(subject_data.get("regdate")) if subject_data.get("regdate") else None,
+        "crdate": format_date(subject_data.get("crdate")) if subject_data.get("crdate") else None,
+        "last_updated": parse_isoish_datetime(subject_data.get("index_date")) or datetime.now(timezone.utc),
     }
 
 
-def is_active_registry_record(registry: RegistryRecord) -> bool:
-    status = (registry.status or "").lower()
-    if "актив" in status:
-        return True
-
-    exclusion_date = parse_isoish_datetime(registry.exclusion_date)
-    if exclusion_date and exclusion_date >= datetime.now():
-        return True
-
-    return False
+def get_contract_status_name(contract: ContractRecord) -> str:
+    return LOCAL_CONTRACT_STATUS_LABELS.get(contract.ref_contract_status_id, f"Статус #{contract.ref_contract_status_id}")
 
 
-def is_terminated_contract(contract: Contract) -> bool:
-    return "расторг" in (contract.status or "").lower()
+def get_buy_status_name(trd_buy: TrdBuyRecord) -> str:
+    return LOCAL_BUY_STATUS_LABELS.get(trd_buy.ref_buy_status_id, f"Статус #{trd_buy.ref_buy_status_id}")
 
 
-def is_positive_complaint_decision(complaint: Complaint) -> bool:
-    decision = (complaint.decision or "").lower()
-    return "удовлетвор" in decision
+def get_trade_method_name(method_id: int) -> str:
+    return LOCAL_TRADE_METHOD_LABELS.get(method_id, f"Способ #{method_id}")
 
 
-def is_partial_complaint_decision(complaint: Complaint) -> bool:
-    decision = (complaint.decision or "").lower()
-    return "частично" in decision
+def is_active_rnu_entry(entry: RnuEntry) -> bool:
+    end_date = parse_isoish_datetime(entry.end_date)
+    return end_date is None or end_date >= datetime.now()
+
+
+def is_terminated_contract(contract: ContractRecord) -> bool:
+    return "расторг" in get_contract_status_name(contract).lower()
+
+
+def is_completed_contract(contract: ContractRecord) -> bool:
+    return any(marker in get_contract_status_name(contract).lower() for marker in ("исполн", "выполн", "заверш"))
+
+
+def is_overdue_act(act: ActRecord) -> bool:
+    return (act.day_overdue or 0) > 0 or (act.sum_fine or 0) > 0
 
 
 def compute_company_assessment(
-    company_data: Dict[str, Any],
-    contracts: List[Contract],
-    complaints: List[Complaint],
-    registries: List[RegistryRecord]
+    subject_data: Dict[str, Any],
+    applications: List[TrdAppRecord],
+    contracts: List[ContractRecord],
+    acts: List[ActRecord],
+    rnu_entries: List[RnuEntry]
 ) -> Dict[str, Any]:
-    active_registries = [registry for registry in registries if is_active_registry_record(registry)]
+    active_rnu_entries = [entry for entry in rnu_entries if is_active_rnu_entry(entry)]
     terminated_contracts = [contract for contract in contracts if is_terminated_contract(contract)]
-    completed_contracts = [contract for contract in contracts if is_completed_contract_status(contract.status)]
-    upheld_complaints = [complaint for complaint in complaints if is_positive_complaint_decision(complaint)]
-    partial_complaints = [complaint for complaint in complaints if is_partial_complaint_decision(complaint)]
+    completed_contracts = [contract for contract in contracts if is_completed_contract(contract)]
+    overdue_acts = [act for act in acts if is_overdue_act(act)]
 
     total_contracts = len(contracts)
+    applications_count = len(applications)
     completed_contracts_count = len(completed_contracts)
     terminated_contracts_count = len(terminated_contracts)
-    complaints_count = len(complaints)
-    upheld_complaints_count = len(upheld_complaints)
-    partial_complaints_count = len(partial_complaints)
-    active_registries_count = len(active_registries)
+    active_rnu_count = len(active_rnu_entries)
+    overdue_acts_count = len(overdue_acts)
 
-    risk_points = 20
-    risk_points += active_registries_count * 45
+    risk_points = 18
+    risk_points += active_rnu_count * 45
     risk_points += min(30, terminated_contracts_count * 14)
-    risk_points += min(18, complaints_count * 4)
-    risk_points += min(16, upheld_complaints_count * 6)
-    risk_points += min(8, partial_complaints_count * 3)
+    risk_points += min(20, overdue_acts_count * 9)
 
     if total_contracts == 0:
         risk_points += 8
+    if applications_count == 0:
+        risk_points += 4
     if completed_contracts_count >= 5:
         risk_points -= 8
     if completed_contracts_count >= 10:
@@ -284,9 +532,9 @@ def compute_company_assessment(
 
     trust_score = max(5, min(95, 100 - risk_points))
 
-    if active_registries_count > 0 or terminated_contracts_count >= 2 or trust_score < 40:
+    if active_rnu_count > 0 or terminated_contracts_count >= 2 or overdue_acts_count >= 2 or trust_score < 40:
         risk_level = "high"
-    elif complaints_count >= 2 or terminated_contracts_count == 1 or trust_score < 70:
+    elif terminated_contracts_count == 1 or overdue_acts_count == 1 or trust_score < 70:
         risk_level = "medium"
     else:
         risk_level = "low"
@@ -294,98 +542,88 @@ def compute_company_assessment(
     risk_indicators: List[RiskIndicator] = []
     risk_factors: List[str] = []
 
-    if active_registries_count > 0:
+    if active_rnu_count > 0:
         risk_indicators.append(
             RiskIndicator(
-                category="Реестр недобросовестных",
+                category="РНУ",
                 level="high",
-                description=f"Найдена {active_registries_count} активная запись в РНУ. Это самый сильный негативный фактор в оценке.",
-                impact="Высокий"
+                description=f"В локальной OWS-модели найдено активных записей в РНУ: {active_rnu_count}.",
+                impact="Высокий",
             )
         )
-        risk_factors.append(f"Компания находится в РНУ: активных записей {active_registries_count}.")
+        risk_factors.append(f"Активных записей в РНУ: {active_rnu_count}.")
 
     if terminated_contracts_count > 0:
         risk_indicators.append(
             RiskIndicator(
-                category="Расторгнутые договоры",
+                category="Договоры",
                 level="high" if terminated_contracts_count >= 2 else "medium",
-                description=f"Зафиксировано расторгнутых договоров: {terminated_contracts_count}. Это снижает итоговое доверие к исполнению обязательств.",
-                impact="Высокий" if terminated_contracts_count >= 2 else "Средний"
+                description=f"Расторгнутых договоров: {terminated_contracts_count}.",
+                impact="Высокий" if terminated_contracts_count >= 2 else "Средний",
             )
         )
         risk_factors.append(f"Расторгнутых договоров: {terminated_contracts_count}.")
 
-    if complaints_count > 0:
+    if overdue_acts_count > 0:
         risk_indicators.append(
             RiskIndicator(
-                category="Жалобы и споры",
-                level="high" if upheld_complaints_count >= 2 else "medium",
-                description=(
-                    f"Найдено жалоб: {complaints_count}. "
-                    f"Из них с положительным для заявителя решением: {upheld_complaints_count}."
-                ),
-                impact="Высокий" if upheld_complaints_count >= 2 else "Средний"
+                category="Электронные акты",
+                level="high" if overdue_acts_count >= 2 else "medium",
+                description=f"Актов с просрочкой или штрафами: {overdue_acts_count}.",
+                impact="Высокий" if overdue_acts_count >= 2 else "Средний",
             )
         )
-        risk_factors.append(
-            f"Жалоб: {complaints_count}, из них удовлетворено полностью или частично: {upheld_complaints_count}."
-        )
+        risk_factors.append(f"Актов с просрочкой или штрафами: {overdue_acts_count}.")
 
     history_level = "low"
     history_impact = "Низкий"
     if total_contracts == 0:
         history_level = "medium"
         history_impact = "Средний"
-        history_description = "Подтвержденной контрактной истории нет, поэтому доверие ограничено."
-        risk_factors.append("Подтвержденной контрактной истории нет.")
+        history_description = "Подтвержденной истории договоров в локальной модели нет."
+        risk_factors.append("Подтвержденной истории договоров нет.")
     else:
-        completion_ratio = completed_contracts_count / total_contracts if total_contracts else 0
-        if completion_ratio < 0.5:
+        history_description = f"Исполнено договоров: {completed_contracts_count} из {total_contracts}."
+        if completed_contracts_count < max(1, total_contracts // 2):
             history_level = "medium"
             history_impact = "Средний"
-        history_description = (
-            f"Исполнено договоров: {completed_contracts_count} из {total_contracts}. "
-            "История исполнения частично компенсирует негативные факторы."
-        )
-        risk_factors.append(f"Исполнено договоров: {completed_contracts_count} из {total_contracts}.")
+        risk_factors.append(history_description)
 
     risk_indicators.append(
         RiskIndicator(
             category="История исполнения",
             level=history_level,
             description=history_description,
-            impact=history_impact
+            impact=history_impact,
         )
     )
-
     risk_indicators.append(
         RiskIndicator(
             category="Итоговая оценка доверия",
             level=risk_level,
             description=(
-                f"Итоговый уровень доверия рассчитан автоматически на основе жалоб, РНУ, "
-                f"расторгнутых договоров и общей истории исполнения. Текущее значение: {trust_score}/100."
+                "Уровень доверия рассчитан по РНУ, статусам договоров, электронным актам и общей истории участия. "
+                f"Текущее значение: {trust_score}/100."
             ),
-            impact="Высокий" if risk_level == "high" else "Средний" if risk_level == "medium" else "Низкий"
+            impact="Высокий" if risk_level == "high" else "Средний" if risk_level == "medium" else "Низкий",
         )
     )
 
     if not risk_factors:
-        risk_factors.append("Существенных негативных факторов не найдено.")
+        risk_factors.append("Существенных негативных факторов по OWS-подобным данным не найдено.")
 
     if risk_level == "high":
-        headline = "Оценка риска повышена из-за сочетания негативных событий в истории компании."
+        headline = "Оценка риска высокая: в истории участника есть критичные сигналы."
     elif risk_level == "medium":
-        headline = "Оценка риска умеренная: есть факторы, требующие дополнительной проверки."
+        headline = "Оценка риска средняя: по данным OWS-модели требуется дополнительная проверка."
     else:
-        headline = "Оценка риска низкая: критичных негативных факторов в профиле компании не найдено."
+        headline = "Оценка риска низкая: существенных негативных факторов не найдено."
 
     company = Company(
-        **normalize_company_payload(company_data),
-        is_blacklisted=active_registries_count > 0,
+        **normalize_subject_payload(subject_data),
+        is_blacklisted=active_rnu_count > 0,
         trust_score=trust_score,
-        risk_level=risk_level
+        risk_level=risk_level,
     )
 
     return {
@@ -395,104 +633,114 @@ def compute_company_assessment(
             "headline": headline,
             "factors": risk_factors,
             "terminated_contracts": terminated_contracts_count,
-            "complaints": complaints_count,
-            "upheld_complaints": upheld_complaints_count,
-            "active_registries": active_registries_count,
+            "active_rnu_entries": active_rnu_count,
+            "overdue_acts": overdue_acts_count,
+            "applications": applications_count,
             "completed_contracts": completed_contracts_count,
             "total_contracts": total_contracts,
         },
     }
 
 
-def map_subject_to_company(
-    subject: Dict[str, Any],
-    is_blacklisted: bool = False,
-    contracts_count: int = 0
-) -> Company:
+def map_subject_to_company(subject: Dict[str, Any], is_blacklisted: bool = False) -> Company:
     return Company(
-        bin=str(subject.get("bin") or subject.get("iin") or subject.get("supplier_biin") or ""),
-        name_ru=subject.get("name_ru") or subject.get("supplier_name_ru") or "Неизвестная компания",
-        name_kz=subject.get("name_kz") or subject.get("supplier_name_kz"),
-        roles=build_roles(subject),
+        **normalize_subject_payload(subject),
         is_blacklisted=is_blacklisted,
         trust_score=0,
         risk_level="medium",
-        last_updated=datetime.now(timezone.utc)
     )
 
 
-def map_rnu_to_registry(record: Dict[str, Any]) -> RegistryRecord:
-    end_date = parse_isoish_datetime(record.get("end_date"))
-    is_active = end_date is None or end_date >= datetime.now()
-
-    reason_parts = []
-    if record.get("court_decision"):
-        reason_parts.append(f"Решение: {record['court_decision']}")
-    if record.get("ref_reason_id") is not None:
-        reason_parts.append(f"Причина включения #{record['ref_reason_id']}")
-
-    return RegistryRecord(
-        registry_type="Реестр недобросовестных поставщиков",
-        status="Активен" if is_active else "Истек",
-        reason="; ".join(reason_parts) if reason_parts else "Запись в реестре недобросовестных поставщиков",
-        inclusion_date=format_date(record.get("start_date")),
-        exclusion_date=format_date(record.get("end_date")) if record.get("end_date") else None,
-        source="goszakup.gov.kz"
+def map_rnu_to_entry(record: Dict[str, Any]) -> RnuEntry:
+    return RnuEntry(
+        id=str(record.get("id") or uuid.uuid4()),
+        pid=int(record.get("pid") or 0),
+        supplier_biin=str(record.get("supplier_biin") or ""),
+        supplier_innunp=record.get("supplier_innunp"),
+        supplier_name_ru=record.get("supplier_name_ru") or "Неизвестный поставщик",
+        supplier_name_kz=record.get("supplier_name_kz"),
+        kato_list=[str(value) for value in record.get("kato_list", []) if value is not None],
+        index_date=record.get("index_date"),
+        customer_name_ru=record.get("customer_name_ru"),
+        customer_name_kz=record.get("customer_name_kz"),
+        customer_biin=record.get("customer_biin"),
+        start_date=record.get("start_date"),
+        end_date=record.get("end_date"),
+        ref_reason_id=record.get("ref_reason_id"),
+        court_decision=record.get("court_decision"),
     )
 
 
-def is_completed_contract_status(status_name: str) -> bool:
-    lowered = status_name.lower()
-    return any(marker in lowered for marker in ("исполн", "выполн", "заверш", "расторг", "закры"))
-
-
-def execution_percent_from_status(status_name: str) -> int:
-    lowered = status_name.lower()
-    if any(marker in lowered for marker in ("исполн", "выполн", "заверш")):
-        return 100
-    if "расторг" in lowered:
-        return 0
-    return 50
-
-
-def map_contract_to_contract(
-    contract: Dict[str, Any],
-    contract_statuses: Dict[int, str]
-) -> Contract:
-    status_id = contract.get("ref_contract_status_id")
-    status_name = contract_statuses.get(int(status_id), f"Статус #{status_id}") if status_id is not None else "Неизвестно"
-    display_name = (
-        (contract.get("trd_buy_number_anno") and f"Объявление {contract['trd_buy_number_anno']}")
-        or contract.get("contract_number_sys")
-        or f"Договор {contract.get('contract_number') or contract.get('id')}"
+def map_contract_to_record(contract: Dict[str, Any], contract_statuses: Dict[int, str]) -> ContractRecord:
+    return ContractRecord(
+        id=int(contract.get("id") or 0),
+        parent_id=contract.get("parent_id"),
+        root_id=int(contract.get("root_id") or contract.get("id") or 0),
+        trd_buy_id=int(contract.get("trd_buy_id") or 0),
+        trd_buy_number_anno=str(contract.get("trd_buy_number_anno") or ""),
+        ref_amendm_agreem_justif_id=contract.get("ref_amendm_agreem_justif_id"),
+        ref_contract_status_id=int(contract.get("ref_contract_status_id") or 0),
+        deleted=int(contract.get("deleted") or 0),
+        crdate=contract.get("crdate"),
+        last_update_date=contract.get("last_update_date"),
+        supplier_id=int(contract.get("supplier_id") or 0),
+        supplier_biin=str(contract.get("supplier_biin") or ""),
+        supplier_bik=contract.get("supplier_bik"),
+        supplier_iik=contract.get("supplier_iik"),
+        supplier_bank_name_kz=contract.get("supplier_bank_name_kz"),
+        supplier_bank_name_ru=contract.get("supplier_bank_name_ru"),
+        contract_number=str(contract.get("contract_number") or contract.get("contract_number_sys") or ""),
+        sign_reason_doc_name=contract.get("sign_reason_doc_name"),
+        sign_reason_doc_date=contract.get("sign_reason_doc_date"),
+        trd_buy_itogi_date_public=contract.get("trd_buy_itogi_date_public"),
+        customer_id=int(contract.get("customer_id") or 0),
+        customer_bin=str(contract.get("customer_bin") or ""),
+        customer_bik=contract.get("customer_bik"),
+        customer_iik=contract.get("customer_iik"),
+        customer_bank_name_kz=contract.get("customer_bank_name_kz"),
+        customer_bank_name_ru=contract.get("customer_bank_name_ru"),
+        customer_name_ru=contract.get("customer_name_ru"),
+        customer_name_kz=contract.get("customer_name_kz"),
+        contract_number_sys=str(contract.get("contract_number_sys") or contract.get("contract_number") or ""),
+        fin_year=int(contract.get("fin_year") or datetime.now().year),
+        ref_contract_agr_form_id=contract.get("ref_contract_agr_form_id"),
+        ref_contract_year_type_id=contract.get("ref_contract_year_type_id"),
+        ref_contract_type_id=contract.get("ref_contract_type_id"),
+        contract_sum=coerce_float(contract.get("contract_sum")),
+        contract_sum_wnds=coerce_float(contract.get("contract_sum_wnds") or contract.get("contract_sum")),
+        system_id=int(contract.get("system_id") or 3),
+        index_date=contract.get("index_date"),
     )
 
-    return Contract(
-        id=str(contract.get("id") or uuid.uuid4()),
-        number=str(contract.get("contract_number_sys") or contract.get("contract_number") or contract.get("id") or ""),
-        name_ru=display_name,
-        customer=str(contract.get("customer_bin") or "Заказчик не указан"),
-        amount=coerce_float(contract.get("contract_sum_wnds") or contract.get("contract_sum")),
-        sign_date=format_date(contract.get("crdate")),
-        status=status_name,
-        execution_percent=execution_percent_from_status(status_name)
-    )
 
+def map_application_to_record(application: Dict[str, Any]) -> TrdAppRecord:
+    lots = [
+        TrdAppLot(
+            id=str(lot.get("id") or lot.get("lot_id") or uuid.uuid4()),
+            lot_id=int(lot.get("lot_id") or 0),
+            lot_number=str(lot.get("lot_number") or lot.get("lot_id") or ""),
+            name_ru=lot.get("name_ru") or "Лот",
+            quantity=coerce_float(lot.get("quantity") or 1),
+            price=coerce_float(lot.get("price")),
+            price_offer=coerce_float(lot.get("price_offer") or lot.get("price")),
+            amount=coerce_float(lot.get("amount")),
+            ref_lot_status_id=int(lot.get("ref_lot_status_id") or 0),
+        )
+        for lot in application.get("app_lots", [])
+        if isinstance(lot, dict)
+    ]
 
-def map_application_to_tender(application: Dict[str, Any]) -> Tender:
-    total_amount = sum(coerce_float(lot.get("amount")) for lot in application.get("app_lots", []) if isinstance(lot, dict))
-    buy_id = application.get("buy_id")
-    prot_number = application.get("prot_number")
-
-    return Tender(
+    return TrdAppRecord(
         id=str(application.get("id") or uuid.uuid4()),
-        number=str(prot_number or buy_id or application.get("id") or ""),
-        name_ru=f"Закупка #{buy_id}" if buy_id else "Заявка поставщика",
-        customer="Не указан в OWS v3",
-        amount=total_amount,
-        date=format_date(application.get("date_apply")),
-        status="Подана заявка" if not prot_number else f"Протокол {prot_number}",
-        method="Заявка поставщика"
+        buy_id=int(application.get("buy_id") or 0),
+        supplier_id=int(application.get("supplier_id") or 0),
+        cr_fio=application.get("cr_fio"),
+        mod_fio=application.get("mod_fio"),
+        supplier_bin_iin=str(application.get("supplier_bin_iin") or ""),
+        prot_id=application.get("prot_id"),
+        prot_number=application.get("prot_number"),
+        date_apply=application.get("date_apply"),
+        app_lots=lots,
     )
 
 
@@ -590,17 +838,26 @@ async def search_goszakup_companies(query: str) -> List[Company]:
     companies: List[Company] = []
     for subject in subject_items:
         bin_value = str(subject.get("bin") or subject.get("iin") or "")
-        registries = [map_rnu_to_registry(item) for item in rnu_by_bin.get(bin_value, [])]
-        company_seed = map_subject_to_company(subject, is_blacklisted=bool(registries))
-        assessment = compute_company_assessment(company_seed.model_dump(), [], [], registries)
+        rnu_entries = [map_rnu_to_entry(item) for item in rnu_by_bin.get(bin_value, [])]
+        assessment = compute_company_assessment(subject, [], [], [], rnu_entries)
         companies.append(assessment["company"])
 
     return companies
 
 
 async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfile]:
-    subject_payload, contracts_payload, rnu_payload, applications_payload, contract_statuses = await asyncio.gather(
+    (
+        subject_payload,
+        addresses_payload,
+        employees_payload,
+        contracts_payload,
+        rnu_payload,
+        applications_payload,
+        contract_statuses,
+    ) = await asyncio.gather(
         goszakup_get(f"/subject/biin/{bin_value}", allow_not_found=True),
+        goszakup_get(f"/subject/biin/{bin_value}/address", allow_not_found=True),
+        goszakup_get(f"/subject/biin/{bin_value}/employees", allow_not_found=True),
         goszakup_get(f"/contract/supplier/{bin_value}", allow_not_found=True),
         goszakup_get(f"/rnu/{bin_value}", allow_not_found=True),
         goszakup_get("/trd-app", params={"supplier_bin_iin": bin_value}, allow_not_found=True),
@@ -612,34 +869,32 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         return None
 
     subject = subject_items[0]
-    rnu_items = extract_items(rnu_payload)
-    contract_items = extract_items(contracts_payload)
-    application_items = extract_items(applications_payload)
+    subject_record = SubjectRecord(**subject)
+    subject_addresses = [SubjectAddress(**item) for item in extract_items(addresses_payload)]
+    subject_employees = [SubjectEmployee(**item) for item in extract_items(employees_payload)]
+    rnu_entries = [map_rnu_to_entry(item) for item in extract_items(rnu_payload)]
+    contracts = [map_contract_to_record(item, contract_statuses) for item in extract_items(contracts_payload)[:50]]
+    trd_apps = [map_application_to_record(item) for item in extract_items(applications_payload)[:20]]
+    trd_buys: List[TrdBuyRecord] = []
+    contract_units: List[ContractUnitRecord] = []
+    acts: List[ActRecord] = []
 
-    contracts = [map_contract_to_contract(item, contract_statuses) for item in contract_items[:50]]
-    registries = [map_rnu_to_registry(item) for item in rnu_items]
-    tenders = [map_application_to_tender(item) for item in application_items[:20]]
-    complaints: List[Complaint] = []
-
-    company_seed = map_subject_to_company(
-        subject,
-        is_blacklisted=bool(rnu_items),
-        contracts_count=len(contract_items)
-    )
-    assessment = compute_company_assessment(company_seed.model_dump(), contracts, complaints, registries)
+    assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
     company = assessment["company"]
 
-    completed_contracts = sum(1 for contract in contracts if is_completed_contract_status(contract.status))
-    total_value = sum(contract.amount for contract in contracts)
+    completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
+    total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
     regdate = parse_isoish_datetime(subject.get("regdate")) or parse_isoish_datetime(subject.get("crdate"))
     years_active = max(0, datetime.now().year - regdate.year) if regdate else int(subject.get("year") or 0)
 
     summary = {
         "total_contracts": len(contracts),
+        "total_announcements": len(trd_buys),
+        "total_applications": len(trd_apps),
+        "total_acts": len(acts),
         "total_value": total_value,
         "active_contracts": max(0, len(contracts) - completed_contracts),
         "completed_contracts": completed_contracts,
-        "complaints_filed": len(complaints),
         "years_active": years_active,
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
         "data_source": "goszakup.gov.kz OWS v3",
@@ -649,63 +904,62 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
     return SupplierProfile(
         company=company,
         summary=summary,
-        tenders=tenders,
+        subject=subject_record,
+        subject_addresses=subject_addresses,
+        subject_employees=subject_employees,
+        trd_buys=trd_buys,
+        trd_apps=trd_apps,
         contracts=contracts,
-        complaints=complaints,
-        registries=registries,
+        contract_units=contract_units,
+        acts=acts,
+        rnu_entries=rnu_entries,
         risk_indicators=assessment["risk_indicators"]
     )
 
 
 async def ensure_local_supplier_profiles_seeded():
-    await db.supplier_profiles.create_index("company.bin", unique=True)
-    await db.supplier_profiles.create_index("company.name_ru")
-    await db.supplier_profiles.create_index("company.name_kz")
-    await db.supplier_profiles.update_many(
-        {},
-        {
-            "$unset": {
-                "risk_indicators": "",
-                "company.trust_score": "",
-                "company.risk_level": "",
-                "company.is_blacklisted": "",
-            }
-        }
-    )
+    existing_indexes = await db.supplier_profiles.index_information()
+    if "company.bin_1" in existing_indexes:
+        await db.supplier_profiles.drop()
 
-    existing_count = await db.supplier_profiles.count_documents({})
-    if existing_count > 0:
-        return
+    legacy_profile_exists = await db.supplier_profiles.count_documents(
+        {"$or": [{"company": {"$exists": True}}, {"subject.bin": None}]},
+        limit=1,
+    )
+    if legacy_profile_exists:
+        await db.supplier_profiles.drop()
+
+    await db.supplier_profiles.create_index("subject.bin", unique=True)
+    await db.supplier_profiles.create_index("subject.name_ru")
+    await db.supplier_profiles.create_index("subject.name_kz")
 
     with LOCAL_SUPPLIER_PROFILES_PATH.open("r", encoding="utf-8") as seed_file:
         profiles = json.load(seed_file)
 
     prepared_profiles = []
     for profile in profiles:
-        company_payload = {
-            key: value
-            for key, value in profile.get("company", {}).items()
-            if key not in {"trust_score", "risk_level", "is_blacklisted"}
-        }
+        subject_payload = profile.get("subject", {})
         prepared_profile = {
-            **{key: value for key, value in profile.items() if key != "risk_indicators"},
-            "company": company_payload,
+            **profile,
             "search_text": " ".join(
                 filter(
                     None,
                     [
-                        str(company_payload.get("bin", "")),
-                        company_payload.get("name_ru", ""),
-                        company_payload.get("name_kz", ""),
+                        str(subject_payload.get("bin", "")),
+                        subject_payload.get("name_ru", ""),
+                        subject_payload.get("name_kz", ""),
+                        subject_payload.get("full_name_ru", ""),
+                        subject_payload.get("full_name_kz", ""),
                     ],
                 )
             ).lower(),
         }
         prepared_profiles.append(prepared_profile)
 
+    await db.supplier_profiles.delete_many({})
     if prepared_profiles:
         await db.supplier_profiles.insert_many(prepared_profiles)
-        logger.info("Seeded %s local supplier profiles", len(prepared_profiles))
+        logger.info("Seeded %s local supplier profiles in OWS-like format", len(prepared_profiles))
 
 
 async def search_local_companies(query: str) -> List[Company]:
@@ -716,25 +970,26 @@ async def search_local_companies(query: str) -> List[Company]:
     regex = re.escape(normalized_query)
     search_filter = {
         "$or": [
-            {"company.bin": {"$regex": regex}},
-            {"company.name_ru": {"$regex": regex, "$options": "i"}},
-            {"company.name_kz": {"$regex": regex, "$options": "i"}},
+            {"subject.bin": {"$regex": regex}},
+            {"subject.name_ru": {"$regex": regex, "$options": "i"}},
+            {"subject.name_kz": {"$regex": regex, "$options": "i"}},
             {"search_text": {"$regex": regex.lower()}},
         ]
     }
 
     cursor = db.supplier_profiles.find(
         search_filter,
-        {"_id": 0, "company": 1, "contracts": 1, "complaints": 1, "registries": 1}
+        {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1}
     ).limit(SEARCH_RESULT_LIMIT)
     companies: List[Company] = []
     async for item in cursor:
-        company_data = item.get("company")
-        if company_data:
-            contracts = [Contract(**contract) for contract in item.get("contracts", [])]
-            complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
-            registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
-            assessment = compute_company_assessment(company_data, contracts, complaints, registries)
+        subject = item.get("subject")
+        if subject:
+            trd_apps = [TrdAppRecord(**application) for application in item.get("trd_apps", [])]
+            contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
+            acts = [ActRecord(**act) for act in item.get("acts", [])]
+            rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
+            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
             companies.append(assessment["company"])
 
     return companies
@@ -755,9 +1010,9 @@ async def list_local_companies(
             mongo_filters.append(
                 {
                     "$or": [
-                        {"company.bin": {"$regex": regex}},
-                        {"company.name_ru": {"$regex": regex, "$options": "i"}},
-                        {"company.name_kz": {"$regex": regex, "$options": "i"}},
+                        {"subject.bin": {"$regex": regex}},
+                        {"subject.name_ru": {"$regex": regex, "$options": "i"}},
+                        {"subject.name_kz": {"$regex": regex, "$options": "i"}},
                         {"search_text": {"$regex": regex.lower()}},
                     ]
                 }
@@ -767,19 +1022,20 @@ async def list_local_companies(
 
     cursor = (
         db.supplier_profiles
-        .find(mongo_filter, {"_id": 0, "company": 1, "contracts": 1, "complaints": 1, "registries": 1})
-        .sort("company.name_ru", 1)
+        .find(mongo_filter, {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1})
+        .sort("subject.name_ru", 1)
         .limit(limit)
     )
 
     companies: List[Company] = []
     async for item in cursor:
-        company_data = item.get("company")
-        if company_data:
-            contracts = [Contract(**contract) for contract in item.get("contracts", [])]
-            complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
-            registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
-            assessment = compute_company_assessment(company_data, contracts, complaints, registries)
+        subject = item.get("subject")
+        if subject:
+            trd_apps = [TrdAppRecord(**application) for application in item.get("trd_apps", [])]
+            contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
+            acts = [ActRecord(**act) for act in item.get("acts", [])]
+            rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
+            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
             company = assessment["company"]
             if risk_level and company.risk_level != risk_level:
                 continue
@@ -791,34 +1047,50 @@ async def list_local_companies(
 
 
 async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile]:
-    profile = await db.supplier_profiles.find_one({"company.bin": str(bin_value)}, {"_id": 0, "search_text": 0})
+    profile = await db.supplier_profiles.find_one({"subject.bin": str(bin_value)}, {"_id": 0, "search_text": 0})
     if not profile:
         return None
-    contracts = [Contract(**contract) for contract in profile.get("contracts", [])]
-    complaints = [Complaint(**complaint) for complaint in profile.get("complaints", [])]
-    registries = [RegistryRecord(**registry) for registry in profile.get("registries", [])]
-    tenders = [Tender(**tender) for tender in profile.get("tenders", [])]
+    subject = SubjectRecord(**profile.get("subject", {}))
+    subject_addresses = [SubjectAddress(**item) for item in profile.get("subject_addresses", [])]
+    subject_employees = [SubjectEmployee(**item) for item in profile.get("subject_employees", [])]
+    trd_buys = [TrdBuyRecord(**item) for item in profile.get("trd_buys", [])]
+    trd_apps = [TrdAppRecord(**item) for item in profile.get("trd_apps", [])]
+    contracts = [ContractRecord(**item) for item in profile.get("contracts", [])]
+    contract_units = [ContractUnitRecord(**item) for item in profile.get("contract_units", [])]
+    acts = [ActRecord(**item) for item in profile.get("acts", [])]
+    rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
 
-    assessment = compute_company_assessment(profile.get("company", {}), contracts, complaints, registries)
+    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries)
+    completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
+    total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
+    regdate = parse_isoish_datetime(subject.regdate) or parse_isoish_datetime(subject.crdate)
 
     summary = {
         **profile.get("summary", {}),
         "total_contracts": len(contracts),
-        "total_value": sum(contract.amount for contract in contracts),
-        "active_contracts": max(0, len(contracts) - sum(1 for contract in contracts if is_completed_contract_status(contract.status))),
-        "completed_contracts": sum(1 for contract in contracts if is_completed_contract_status(contract.status)),
-        "complaints_filed": len(complaints),
-        "average_contract_value": round(sum(contract.amount for contract in contracts) / len(contracts)) if contracts else 0,
+        "total_announcements": len(trd_buys),
+        "total_applications": len(trd_apps),
+        "total_acts": len(acts),
+        "total_value": total_value,
+        "active_contracts": max(0, len(contracts) - completed_contracts),
+        "completed_contracts": completed_contracts,
+        "years_active": max(0, datetime.now().year - regdate.year) if regdate else 0,
+        "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
         "risk_assessment": assessment["risk_assessment"],
     }
 
     return SupplierProfile(
         company=assessment["company"],
         summary=summary,
-        tenders=tenders,
+        subject=subject,
+        subject_addresses=subject_addresses,
+        subject_employees=subject_employees,
+        trd_buys=trd_buys,
+        trd_apps=trd_apps,
         contracts=contracts,
-        complaints=complaints,
-        registries=registries,
+        contract_units=contract_units,
+        acts=acts,
+        rnu_entries=rnu_entries,
         risk_indicators=assessment["risk_indicators"],
     )
 
@@ -826,11 +1098,11 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
 async def get_local_dashboard_stats() -> DashboardStats:
     cursor = db.supplier_profiles.find(
         {},
-        {"_id": 0, "company": 1, "tenders": 1, "contracts": 1, "complaints": 1, "registries": 1}
+        {"_id": 0, "subject": 1, "trd_buys": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1}
     )
 
     total_companies = 0
-    total_tenders = 0
+    total_announcements = 0
     blacklisted_companies = 0
     total_contract_value = 0.0
     trust_score_sum = 0
@@ -838,15 +1110,16 @@ async def get_local_dashboard_stats() -> DashboardStats:
     async for item in cursor:
         total_companies += 1
 
-        tenders = [Tender(**tender) for tender in item.get("tenders", [])]
-        contracts = [Contract(**contract) for contract in item.get("contracts", [])]
-        complaints = [Complaint(**complaint) for complaint in item.get("complaints", [])]
-        registries = [RegistryRecord(**registry) for registry in item.get("registries", [])]
-        assessment = compute_company_assessment(item.get("company", {}), contracts, complaints, registries)
+        trd_buys = [TrdBuyRecord(**item_data) for item_data in item.get("trd_buys", [])]
+        trd_apps = [TrdAppRecord(**application) for application in item.get("trd_apps", [])]
+        contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
+        acts = [ActRecord(**act) for act in item.get("acts", [])]
+        rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
+        assessment = compute_company_assessment(item.get("subject", {}), trd_apps, contracts, acts, rnu_entries)
         company = assessment["company"]
 
-        total_tenders += len(tenders)
-        total_contract_value += sum(contract.amount for contract in contracts)
+        total_announcements += len(trd_buys)
+        total_contract_value += sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
         trust_score_sum += company.trust_score
 
         if company.is_blacklisted:
@@ -856,7 +1129,7 @@ async def get_local_dashboard_stats() -> DashboardStats:
 
     return DashboardStats(
         total_companies=total_companies,
-        total_tenders=total_tenders,
+        total_announcements=total_announcements,
         blacklisted_companies=blacklisted_companies,
         total_contract_value=round(total_contract_value, 2),
         average_trust_score=average_trust_score,

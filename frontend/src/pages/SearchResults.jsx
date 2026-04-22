@@ -7,6 +7,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { RoleBadge, RegistryBadge, RiskBadge } from '@/components/shared/Badges';
 import { PrimaryButton, SecondaryButton } from '@/components/shared/Buttons';
 import { companiesAPI } from '@/utils/api';
+import { getTypeSupplierLabel } from '@/utils/ows';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 
@@ -63,12 +64,22 @@ export default function SearchResults() {
       render: (row) => <span className="font-mono text-xs">{row.bin}</span>,
     },
     {
-      header: 'Название компании',
+      header: 'Участник',
       key: 'name_ru',
       render: (row) => (
         <div>
           <p className="font-medium text-slate-900">{row.name_ru}</p>
-          {row.name_kz && <p className="text-xs text-slate-500">{row.name_kz}</p>}
+          {row.full_name_ru && <p className="text-xs text-slate-500">{row.full_name_ru}</p>}
+        </div>
+      ),
+    },
+    {
+      header: 'PID / Тип',
+      key: 'pid',
+      render: (row) => (
+        <div>
+          <p className="text-sm text-slate-900">{row.pid || '—'}</p>
+          <p className="text-xs text-slate-500">{getTypeSupplierLabel(row.type_supplier)}</p>
         </div>
       ),
     },
@@ -128,8 +139,8 @@ export default function SearchResults() {
     <PageContainer>
       <div data-testid="search-results-page" className="space-y-6">
         <PageHeader
-          title="Результаты поиска"
-          subtitle={`Найдено компаний: ${companies.length}`}
+          title="Результаты поиска по реестру участников"
+          subtitle={`Найдено участников: ${companies.length}`}
           actions={
             <SecondaryButton
               data-testid="back-to-home-btn"

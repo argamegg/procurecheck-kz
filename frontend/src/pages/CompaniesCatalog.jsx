@@ -8,6 +8,7 @@ import { MetricCard, InfoCard } from '@/components/shared/Cards';
 import { PrimaryButton, SecondaryButton } from '@/components/shared/Buttons';
 import { RoleBadge, RegistryBadge, RiskBadge } from '@/components/shared/Badges';
 import { companiesAPI } from '@/utils/api';
+import { getTypeSupplierLabel } from '@/utils/ows';
 import { toast } from 'sonner';
 import { ArrowLeft, Building2, AlertTriangle, ShieldCheck, TrendingUp } from 'lucide-react';
 
@@ -82,6 +83,16 @@ export default function CompaniesCatalog() {
       ),
     },
     {
+      header: 'PID / Тип',
+      key: 'pid',
+      render: (row) => (
+        <div>
+          <p className="text-sm text-slate-900">{row.pid || '—'}</p>
+          <p className="text-xs text-slate-500">{getTypeSupplierLabel(row.type_supplier)}</p>
+        </div>
+      ),
+    },
+    {
       header: 'Роли',
       key: 'roles',
       render: (row) => (
@@ -130,7 +141,7 @@ export default function CompaniesCatalog() {
       <div data-testid="companies-catalog-page" className="space-y-8">
         <PageHeader
           title="Все участники"
-          subtitle={`Каталог компаний в локальной аналитической базе: ${companies.length}`}
+          subtitle={`Реестр участников в локальной OWS-подобной базе: ${companies.length}`}
           actions={
             <SecondaryButton onClick={() => navigate('/')} data-testid="companies-back-btn">
               <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />

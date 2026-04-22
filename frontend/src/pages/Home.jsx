@@ -15,10 +15,11 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [catalogPreview, setCatalogPreview] = useState([]);
+  const [rnuPreview, setRnuPreview] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     total_companies: 0,
-    total_tenders: 0,
+    total_announcements: 0,
     blacklisted_companies: 0,
     total_contract_value: 0,
     average_trust_score: 0,
@@ -27,6 +28,7 @@ export default function Home() {
   useEffect(() => {
     loadRecentSearches();
     loadCompaniesPreview();
+    loadRnuPreview();
     loadDashboardStats();
   }, []);
 
@@ -46,7 +48,7 @@ export default function Home() {
     } catch (error) {
       setDashboardStats({
         total_companies: 0,
-        total_tenders: 0,
+        total_announcements: 0,
         blacklisted_companies: 0,
         total_contract_value: 0,
         average_trust_score: 0,
@@ -60,6 +62,15 @@ export default function Home() {
       setCatalogPreview((response.data.companies || []).slice(0, 5));
     } catch (error) {
       setCatalogPreview([]);
+    }
+  };
+
+  const loadRnuPreview = async () => {
+    try {
+      const response = await companiesAPI.list({ is_blacklisted: true });
+      setRnuPreview((response.data.companies || []).slice(0, 5));
+    } catch (error) {
+      setRnuPreview([]);
     }
   };
 
@@ -119,17 +130,17 @@ export default function Home() {
         <div className="bento-grid">
           <MetricCard
             data-testid="metric-total-companies"
-            label="Всего компаний в базе"
+            label="Всего участников"
             value={new Intl.NumberFormat('ru-RU').format(dashboardStats.total_companies)}
             icon={<Building2 className="w-5 h-5" strokeWidth={1.5} />}
-            trend="Профили из локальной аналитической базы"
+            trend="Карточки по структуре OWS v3"
           />
           <MetricCard
             data-testid="metric-active-tenders"
-            label="Тендеров в профилях"
-            value={new Intl.NumberFormat('ru-RU').format(dashboardStats.total_tenders)}
+            label="Объявлений в профилях"
+            value={new Intl.NumberFormat('ru-RU').format(dashboardStats.total_announcements)}
             icon={<FileText className="w-5 h-5" strokeWidth={1.5} />}
-            trend="Суммарно по всем компаниям в базе"
+            trend="Реестр объявлений в локальной базе"
           />
           <MetricCard
             data-testid="metric-blacklisted"
@@ -201,7 +212,7 @@ export default function Home() {
         >
           <div className="space-y-4">
             <p className="text-sm text-slate-600">
-              Отдельный раздел со всеми компаниями локальной аналитической базы: поиск по названию, просмотр риска и быстрый переход в карточку участника.
+              Отдельный раздел со всеми участниками локальной базы в формате, приближенном к OWS v3: поиск по БИН, статус РНУ и быстрый переход в карточку участника.
             </p>
 
             <div className="grid gap-3">
@@ -232,6 +243,50 @@ export default function Home() {
                 </button>
               ))}
             </div>
+          </div>
+        </InfoCard>
+
+        <InfoCard
+          title="РНУ"
+          actions={
+            <SecondaryButton onClick={() => navigate('/rnu')} data-testid="home-open-rnu-btn">
+              Открыть реестр
+              <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
+            </SecondaryButton>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Компании с активной записью в реестре недобросовестных поставщиков по локальной OWS-подобной модели.
+            </p>
+
+            {rnuPreview.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+                <p className="text-sm font-medium text-slate-700">Активных записей РНУ не найдено</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {rnuPreview.map((company) => (
+                  <button
+                    key={company.bin}
+                    type="button"
+                    onClick={() => navigate(`/supplier/${company.bin}`)}
+                    className="text-left p-4 rounded-lg border border-red-200 bg-red-50/40 hover:bg-red-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-slate-900">{company.name_ru}</p>
+                        <p className="text-xs text-slate-500 font-mono mt-1">БИН: {company.bin}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <RiskBadge level={company.risk_level} />
+                        <span className="text-xs text-slate-500">Доверие: {company.trust_score}/100</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </InfoCard>
       </div>

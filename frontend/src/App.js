@@ -6,6 +6,7 @@ import Home from '@/pages/Home';
 import SearchResults from '@/pages/SearchResults';
 import SupplierProfile from '@/pages/SupplierProfile';
 import CompaniesCatalog from '@/pages/CompaniesCatalog';
+import RnuRegistry from '@/pages/RnuRegistry';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import '@/App.css';
 
@@ -44,6 +45,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CompaniesCatalog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rnu"
+            element={
+              <ProtectedRoute>
+                <RnuRegistry />
               </ProtectedRoute>
             }
           />

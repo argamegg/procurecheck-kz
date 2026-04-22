@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { ContentSwitcher } from '@/components/shared/ContentSwitcher';
 import { InfoCard, MetricCard, SectionCard } from '@/components/shared/Cards';
-import { RoleBadge, RegistryBadge, RiskBadge, StatusBadge } from '@/components/shared/Badges';
+import { RegistryBadge, RiskBadge, RoleBadge } from '@/components/shared/Badges';
 import { SecondaryButton } from '@/components/shared/Buttons';
 import { DataTable } from '@/components/shared/DataTable';
 import { companiesAPI } from '@/utils/api';
 import { addSearchHistoryEntry } from '@/utils/auth';
-import { toast } from 'sonner';
 import {
-  ArrowLeft,
-  Building2,
-  FileText,
-  AlertTriangle,
-  TrendingUp,
-  Calendar,
-  ShieldAlert,
-  Network,
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  getAddressTypeLabel,
+  getApplicationAmount,
+  getBuyStatusLabel,
+  getContractStatusLabel,
+  getEmployeeRoleLabel,
+  getTradeMethodLabel,
+  getTypeSupplierLabel,
+} from '@/utils/ows';
+import { toast } from 'sonner';
+import { ArrowLeft, Building2, MapPin, Users, FileText, Receipt, ShieldAlert, TrendingUp, FileCheck } from 'lucide-react';
 
 const TengeIcon = ({ className = '' }) => (
   <span className={`inline-flex items-center justify-center text-lg font-semibold leading-none ${className}`}>
@@ -72,70 +73,110 @@ export default function SupplierProfile() {
     );
   }
 
-  const { company, summary, tenders, contracts, complaints, registries, risk_indicators } = profile;
+  const {
+    company,
+    summary,
+    subject,
+    subject_addresses,
+    subject_employees,
+    trd_buys,
+    trd_apps,
+    contracts,
+    contract_units,
+    acts,
+    rnu_entries,
+    risk_indicators,
+  } = profile;
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('ru-RU').format(value) + ' ₸';
-  };
+  const riskAssessment = summary?.risk_assessment || {};
 
   const OverviewTab = () => (
     <div data-testid="overview-tab" className="space-y-6">
       <div className="bento-grid">
         <MetricCard
-          label="Всего контрактов"
-          value={summary.total_contracts}
+          label="Объявления"
+          value={summary.total_announcements}
           icon={<FileText className="w-5 h-5" strokeWidth={1.5} />}
         />
         <MetricCard
-          label="Общая стоимость"
+          label="Заявки поставщика"
+          value={summary.total_applications}
+          icon={<Receipt className="w-5 h-5" strokeWidth={1.5} />}
+        />
+        <MetricCard
+          label="Договоры"
+          value={summary.total_contracts}
+          icon={<FileCheck className="w-5 h-5" strokeWidth={1.5} />}
+        />
+        <MetricCard
+          label="Сумма договоров"
           value={formatCurrency(summary.total_value)}
           icon={<TengeIcon className="w-5 h-5 text-slate-400" />}
         />
-        <MetricCard
-          label="Активные контракты"
-          value={summary.active_contracts}
-          icon={<TrendingUp className="w-5 h-5" strokeWidth={1.5} />}
-        />
-        <MetricCard
-          label="Лет на рынке"
-          value={summary.years_active}
-          icon={<Calendar className="w-5 h-5" strokeWidth={1.5} />}
-        />
       </div>
 
-      <InfoCard title="AI Анализ">
-        <div className="prose prose-sm max-w-none text-slate-700">
+      <InfoCard title="Сводка по данным OWS v3">
+        <div className="space-y-3 text-sm text-slate-700">
           <p>
-            Компания <strong>{company.name_ru}</strong> является {company.is_blacklisted ? 'недобросовестным' : 'надежным'} участником государственных закупок с {summary.years_active}-летним опытом работы.
+            Участник <strong>{subject.full_name_ru || subject.name_ru}</strong> представлен в локальной базе в формате,
+            приближенном к официальной структуре OWS v3: карточка участника, адреса, сотрудники, объявления,
+            заявки поставщика, договоры, акты и РНУ.
           </p>
           <p>
-            Общий объем выполненных контрактов составляет {formatCurrency(summary.total_value)}. Средняя стоимость контракта: {formatCurrency(summary.average_contract_value)}.
+            В профиле найдено объявлений: <strong>{trd_buys.length}</strong>, заявок: <strong>{trd_apps.length}</strong>,
+            договоров: <strong>{contracts.length}</strong>, электронных актов: <strong>{acts.length}</strong>.
           </p>
-          {company.is_blacklisted && (
-            <p className="text-red-600 font-medium">
-              ⚠️ Компания находится в реестре недобросовестных поставщиков. Рекомендуется провести дополнительную проверку перед сотрудничеством.
-            </p>
-          )}
+          <p>
+            Источник данных: <strong>{summary.data_source}</strong>.
+          </p>
         </div>
       </InfoCard>
     </div>
   );
 
-  const CompanyInfoTab = () => (
-    <div data-testid="company-info-tab" className="space-y-6">
-      <InfoCard title="Основная информация">
-        <dl className="grid grid-cols-2 gap-4">
+  const SubjectTab = () => (
+    <div data-testid="subject-tab" className="space-y-6">
+      <InfoCard title="Карточка участника">
+        <dl className="grid md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt className="text-xs font-medium text-slate-500">PID</dt>
+            <dd className="mt-1 text-slate-900">{subject.pid}</dd>
+          </div>
           <div>
             <dt className="text-xs font-medium text-slate-500">БИН</dt>
-            <dd className="mt-1 text-sm font-mono text-slate-900">{company.bin}</dd>
+            <dd className="mt-1 font-mono text-slate-900">{subject.bin}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium text-slate-500">Название (РУ)</dt>
-            <dd className="mt-1 text-sm text-slate-900">{company.name_ru}</dd>
+            <dt className="text-xs font-medium text-slate-500">Краткое наименование (РУ)</dt>
+            <dd className="mt-1 text-slate-900">{subject.name_ru}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium text-slate-500">Название (КЗ)</dt>
-            <dd className="mt-1 text-sm text-slate-900">{company.name_kz || 'Не указано'}</dd>
+            <dt className="text-xs font-medium text-slate-500">Краткое наименование (КЗ)</dt>
+            <dd className="mt-1 text-slate-900">{subject.name_kz || 'Не указано'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Полное наименование (РУ)</dt>
+            <dd className="mt-1 text-slate-900">{subject.full_name_ru || 'Не указано'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Полное наименование (КЗ)</dt>
+            <dd className="mt-1 text-slate-900">{subject.full_name_kz || 'Не указано'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Тип поставщика</dt>
+            <dd className="mt-1 text-slate-900">{getTypeSupplierLabel(subject.type_supplier)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Дата регистрации</dt>
+            <dd className="mt-1 text-slate-900">{formatDate(subject.crdate)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Свидетельство</dt>
+            <dd className="mt-1 text-slate-900">{subject.number_reg || 'Не указано'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">ОКЭД</dt>
+            <dd className="mt-1 text-slate-900">{(subject.oked_list || []).join(', ') || 'Не указано'}</dd>
           </div>
           <div>
             <dt className="text-xs font-medium text-slate-500">Роли</dt>
@@ -145,24 +186,88 @@ export default function SupplierProfile() {
               ))}
             </dd>
           </div>
+          <div>
+            <dt className="text-xs font-medium text-slate-500">Индекс обновления</dt>
+            <dd className="mt-1 text-slate-900">{formatDateTime(subject.index_date)}</dd>
+          </div>
         </dl>
       </InfoCard>
     </div>
   );
 
-  const TendersTab = () => (
-    <div data-testid="tenders-tab" className="space-y-6">
-      <InfoCard title={`История тендеров (${tenders.length})`}>
+  const AddressesTab = () => (
+    <div data-testid="addresses-tab" className="space-y-6">
+      <InfoCard title={`Адреса участника (${subject_addresses.length})`}>
+        <div className="space-y-4">
+          {subject_addresses.map((address) => (
+            <SectionCard key={address.id}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="font-medium text-slate-900">{getAddressTypeLabel(address.address_type)}</p>
+                  <p className="text-sm text-slate-700">{address.address}</p>
+                  <p className="text-xs text-slate-500">КАТО: {address.kato_code || 'Не указано'}</p>
+                </div>
+                <div className="text-right text-xs text-slate-500">
+                  <p>{address.phone || 'Телефон не указан'}</p>
+                  <p className="mt-1">Обновлено: {formatDate(address.edit_date)}</p>
+                </div>
+              </div>
+            </SectionCard>
+          ))}
+        </div>
+      </InfoCard>
+    </div>
+  );
+
+  const EmployeesTab = () => (
+    <div data-testid="employees-tab" className="space-y-6">
+      <InfoCard title={`Сотрудники (${subject_employees.length})`}>
         <DataTable
           columns={[
-            { header: '№', key: 'number' },
-            { header: 'Название', key: 'name_ru' },
-            { header: 'Заказчик', key: 'customer' },
-            { header: 'Сумма', key: 'amount', render: (row) => formatCurrency(row.amount) },
-            { header: 'Дата', key: 'date' },
-            { header: 'Статус', key: 'status', render: (row) => <StatusBadge status={row.status} /> },
+            { header: 'ФИО', key: 'fio' },
+            { header: 'ИИН', key: 'iin', render: (row) => <span className="font-mono text-xs">{row.iin}</span> },
+            { header: 'Роль', key: 'role', render: (row) => getEmployeeRoleLabel(row.role) },
+            { header: 'Sys Role', key: 'sys_role_id' },
+            { header: 'Дата начала', key: 'start_date', render: (row) => formatDate(row.start_date) },
+            { header: 'Статус', key: 'disabled', render: (row) => (row.disabled ? 'Заблокирован' : 'Активен') },
           ]}
-          data={tenders}
+          data={subject_employees}
+        />
+      </InfoCard>
+    </div>
+  );
+
+  const AnnouncementsTab = () => (
+    <div data-testid="announcements-tab" className="space-y-6">
+      <InfoCard title={`Объявления (${trd_buys.length})`}>
+        <DataTable
+          columns={[
+            { header: '№ объявления', key: 'number_anno' },
+            { header: 'Наименование', key: 'name_ru' },
+            { header: 'Заказчик', key: 'customer_name_ru' },
+            { header: 'Способ', key: 'ref_trade_methods_id', render: (row) => getTradeMethodLabel(row.ref_trade_methods_id) },
+            { header: 'Сумма', key: 'total_sum', render: (row) => formatCurrency(row.total_sum) },
+            { header: 'Статус', key: 'ref_buy_status_id', render: (row) => getBuyStatusLabel(row.ref_buy_status_id) },
+          ]}
+          data={trd_buys}
+        />
+      </InfoCard>
+    </div>
+  );
+
+  const ApplicationsTab = () => (
+    <div data-testid="applications-tab" className="space-y-6">
+      <InfoCard title={`Заявки поставщика (${trd_apps.length})`}>
+        <DataTable
+          columns={[
+            { header: 'ID заявки', key: 'id' },
+            { header: 'ID закупки', key: 'buy_id' },
+            { header: 'Протокол итогов', key: 'prot_number', render: (row) => row.prot_number || 'Не определен' },
+            { header: 'Дата подачи', key: 'date_apply', render: (row) => formatDateTime(row.date_apply) },
+            { header: 'Лотов', key: 'app_lots', render: (row) => row.app_lots.length },
+            { header: 'Сумма предложения', key: 'offered_sum', render: (row) => formatCurrency(getApplicationAmount(row)) },
+          ]}
+          data={trd_apps}
         />
       </InfoCard>
     </div>
@@ -170,105 +275,80 @@ export default function SupplierProfile() {
 
   const ContractsTab = () => (
     <div data-testid="contracts-tab" className="space-y-6">
-      <InfoCard title={`Контракты (${contracts.length})`}>
+      <InfoCard title={`Договоры (${contracts.length})`}>
         <DataTable
           columns={[
-            { header: '№', key: 'number' },
-            { header: 'Название', key: 'name_ru' },
-            { header: 'Заказчик', key: 'customer' },
-            { header: 'Сумма', key: 'amount', render: (row) => formatCurrency(row.amount) },
-            { header: 'Дата подписания', key: 'sign_date' },
-            {
-              header: 'Выполнение',
-              key: 'execution_percent',
-              render: (row) => (
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500"
-                      style={{ width: `${row.execution_percent}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-medium">{row.execution_percent}%</span>
-                </div>
-              ),
-            },
+            { header: 'Системный №', key: 'contract_number_sys' },
+            { header: 'Номер договора', key: 'contract_number' },
+            { header: 'Объявление', key: 'trd_buy_number_anno' },
+            { header: 'Заказчик', key: 'customer_name_ru' },
+            { header: 'Сумма', key: 'contract_sum_wnds', render: (row) => formatCurrency(row.contract_sum_wnds || row.contract_sum) },
+            { header: 'Статус', key: 'ref_contract_status_id', render: (row) => getContractStatusLabel(row.ref_contract_status_id) },
           ]}
           data={contracts}
+        />
+      </InfoCard>
+
+      <InfoCard title={`Предметы договора (${contract_units.length})`}>
+        <DataTable
+          columns={[
+            { header: 'ID договора', key: 'contract_id' },
+            { header: 'Предмет', key: 'name_ru', render: (row) => row.name_ru || 'Не указано' },
+            { header: 'Количество', key: 'quantity' },
+            { header: 'Сумма', key: 'total_sum_wnds', render: (row) => formatCurrency(row.total_sum_wnds) },
+            { header: 'Факт оплаты', key: 'fact_sum_wnds', render: (row) => formatCurrency(row.fact_sum_wnds) },
+            { header: 'Казсодержание', key: 'ks_proc', render: (row) => `${row.ks_proc}%` },
+          ]}
+          data={contract_units}
         />
       </InfoCard>
     </div>
   );
 
-  const ComplaintsTab = () => (
-    <div data-testid="complaints-tab" className="space-y-6">
-      <InfoCard title={`Жалобы (${complaints.length})`}>
-        {complaints.length === 0 ? (
-          <p className="text-center text-slate-500 py-8">Жалоб не найдено</p>
-        ) : (
-          <div className="space-y-4">
-            {complaints.map((complaint) => (
-              <SectionCard key={complaint.id} className="hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-medium text-slate-900">{complaint.number}</p>
-                    <p className="text-xs text-slate-500">{complaint.date}</p>
-                  </div>
-                  <StatusBadge status={complaint.status} />
-                </div>
-                <p className="text-sm text-slate-700 mb-2">{complaint.description}</p>
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-slate-500">Заявитель:</span>
-                    <span className="ml-2 text-slate-900">{complaint.complainant}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Решение:</span>
-                    <span className="ml-2 text-slate-900">{complaint.decision}</span>
-                  </div>
-                </div>
-              </SectionCard>
-            ))}
-          </div>
-        )}
+  const ActsTab = () => (
+    <div data-testid="acts-tab" className="space-y-6">
+      <InfoCard title={`Электронные акты (${acts.length})`}>
+        <DataTable
+          columns={[
+            { header: 'Номер акта', key: 'number_act' },
+            { header: 'Дата акта', key: 'akt_date', render: (row) => formatDate(row.akt_date) },
+            { header: 'Статус', key: 'status_name_ru', render: (row) => row.status_name_ru || `Статус #${row.status_id}` },
+            { header: 'Просрочка', key: 'day_overdue', render: (row) => row.day_overdue || 0 },
+            { header: 'Штраф', key: 'sum_fine', render: (row) => formatCurrency(row.sum_fine || 0) },
+            { header: 'К перечислению', key: 'sum_transfer', render: (row) => formatCurrency(row.sum_transfer || 0) },
+          ]}
+          data={acts}
+        />
       </InfoCard>
     </div>
   );
 
-  const RegistriesTab = () => (
-    <div data-testid="registries-tab" className="space-y-6">
-      <InfoCard title="Статус в реестрах">
-        {registries.length === 0 ? (
+  const RnuTab = () => (
+    <div data-testid="rnu-tab" className="space-y-6">
+      <InfoCard title="Реестр недобросовестных поставщиков">
+        {rnu_entries.length === 0 ? (
           <div className="text-center py-8">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-full mb-3">
               <ShieldAlert className="w-6 h-6 text-emerald-600" strokeWidth={1.5} />
             </div>
-            <p className="text-slate-900 font-medium">Компания не числится в реестре недобросовестных</p>
-            <p className="text-xs text-slate-500 mt-1">Проверено: {new Date().toLocaleDateString('ru-RU')}</p>
+            <p className="text-slate-900 font-medium">Активных записей в РНУ не найдено</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {registries.map((registry, idx) => (
-              <SectionCard key={idx} className="border-l-4 border-red-500">
-                <div className="flex items-start justify-between mb-3">
+            {rnu_entries.map((entry) => (
+              <SectionCard key={entry.id} className="border-l-4 border-red-500">
+                <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
-                    <p className="font-medium text-slate-900">{registry.registry_type}</p>
-                    <StatusBadge status={registry.status} className="mt-1" />
+                    <p className="font-medium text-slate-900">{entry.supplier_name_ru}</p>
+                    <p className="text-xs text-slate-500 font-mono">БИН: {entry.supplier_biin}</p>
                   </div>
+                  <RegistryBadge isBlacklisted />
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="text-slate-500">Причина:</span>
-                    <span className="ml-2 text-slate-900">{registry.reason}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Дата включения:</span>
-                    <span className="ml-2 text-slate-900">{registry.inclusion_date}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Источник:</span>
-                    <span className="ml-2 text-slate-900">{registry.source}</span>
-                  </div>
+                <div className="grid md:grid-cols-2 gap-3 text-sm text-slate-700">
+                  <p>Дата включения: {formatDate(entry.start_date)}</p>
+                  <p>Причина включения: {entry.ref_reason_id ? `Причина #${entry.ref_reason_id}` : 'Не указана'}</p>
+                  <p>Заказчик: {entry.customer_name_ru || 'Не указан'}</p>
+                  <p>Судебное основание: {entry.court_decision || 'Не указано'}</p>
                 </div>
               </SectionCard>
             ))}
@@ -278,132 +358,114 @@ export default function SupplierProfile() {
     </div>
   );
 
-  const RiskTab = () => {
-    const riskAssessment = summary?.risk_assessment || {};
-    const riskFactors = riskAssessment?.factors || [];
-
-    return (
-      <div data-testid="risk-tab" className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <InfoCard title="Уровень доверия">
-            <div className="flex items-center justify-center py-8">
-              <div className="relative w-48 h-48">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="96"
-                    cy="96"
-                    r="80"
-                    stroke="#E5E7EB"
-                    strokeWidth="16"
-                    fill="none"
-                  />
-                  <circle
-                    cx="96"
-                    cy="96"
-                    r="80"
-                    stroke={
-                      company.trust_score >= 70
-                        ? '#10B981'
-                        : company.trust_score >= 40
-                        ? '#F59E0B'
-                        : '#EF4444'
-                    }
-                    strokeWidth="16"
-                    fill="none"
-                    strokeDasharray={`${(company.trust_score / 100) * 502} 502`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-bold text-slate-900">{company.trust_score}</span>
-                  <span className="text-xs text-slate-500">из 100</span>
-                </div>
+  const RiskTab = () => (
+    <div data-testid="risk-tab" className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        <InfoCard title="Уровень доверия">
+          <div className="flex items-center justify-center py-8">
+            <div className="relative w-48 h-48">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="96" cy="96" r="80" stroke="#E5E7EB" strokeWidth="16" fill="none" />
+                <circle
+                  cx="96"
+                  cy="96"
+                  r="80"
+                  stroke={company.trust_score >= 70 ? '#10B981' : company.trust_score >= 40 ? '#F59E0B' : '#EF4444'}
+                  strokeWidth="16"
+                  fill="none"
+                  strokeDasharray={`${(company.trust_score / 100) * 502} 502`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold text-slate-900">{company.trust_score}</span>
+                <span className="text-xs text-slate-500">из 100</span>
               </div>
-            </div>
-          </InfoCard>
-
-          <InfoCard title="Уровень риска">
-            <div className="flex items-center justify-center py-8">
-              <div>
-                <RiskBadge level={company.risk_level} className="text-lg px-6 py-3" />
-              </div>
-            </div>
-          </InfoCard>
-        </div>
-
-        <InfoCard title="Как рассчитана оценка">
-          <div className="space-y-4">
-            <p className="text-sm text-slate-700">
-              {riskAssessment.headline || 'Оценка риска сформирована автоматически на основе истории компании.'}
-            </p>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <SectionCard className="p-4">
-                <p className="text-xs text-slate-500 mb-1">Жалобы</p>
-                <p className="text-lg font-semibold text-slate-900">{riskAssessment.complaints ?? complaints.length}</p>
-              </SectionCard>
-              <SectionCard className="p-4">
-                <p className="text-xs text-slate-500 mb-1">Удовлетворенные жалобы</p>
-                <p className="text-lg font-semibold text-slate-900">{riskAssessment.upheld_complaints ?? 0}</p>
-              </SectionCard>
-              <SectionCard className="p-4">
-                <p className="text-xs text-slate-500 mb-1">Расторгнутые договоры</p>
-                <p className="text-lg font-semibold text-slate-900">{riskAssessment.terminated_contracts ?? 0}</p>
-              </SectionCard>
-              <SectionCard className="p-4">
-                <p className="text-xs text-slate-500 mb-1">Активные записи в РНУ</p>
-                <p className="text-lg font-semibold text-slate-900">{riskAssessment.active_registries ?? 0}</p>
-              </SectionCard>
-            </div>
-
-            <div className="space-y-2">
-              {riskFactors.map((factor, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200"
-                >
-                  <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
-                  <p className="text-sm text-slate-700">{factor}</p>
-                </div>
-              ))}
             </div>
           </div>
         </InfoCard>
 
-        <InfoCard title="Риск-индикаторы">
-          <div className="space-y-4">
-            {risk_indicators.map((indicator, idx) => (
-              <SectionCard
-                key={idx}
-                className={`border-l-4 ${
-                  indicator.level === 'high'
-                    ? 'border-red-500'
-                    : indicator.level === 'medium'
-                    ? 'border-amber-500'
-                    : 'border-emerald-500'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-slate-900">{indicator.category}</h4>
-                  <RiskBadge level={indicator.level} />
-                </div>
-                <p className="text-sm text-slate-700 mb-2">{indicator.description}</p>
-                <p className="text-xs text-slate-500">Влияние: {indicator.impact}</p>
-              </SectionCard>
-            ))}
+        <InfoCard title="Уровень риска">
+          <div className="flex items-center justify-center py-8">
+            <RiskBadge level={company.risk_level} className="text-lg px-6 py-3" />
           </div>
         </InfoCard>
       </div>
-    );
-  };
+
+      <InfoCard title="Как рассчитана оценка">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700">
+            {riskAssessment.headline || 'Оценка сформирована по данным РНУ, договоров, актов и истории участия.'}
+          </p>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Активные записи РНУ</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.active_rnu_entries ?? 0}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Расторгнутые договоры</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.terminated_contracts ?? 0}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Акты с просрочкой/штрафом</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_acts ?? 0}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Исполненные договоры</p>
+              <p className="text-lg font-semibold text-slate-900">
+                {riskAssessment.completed_contracts ?? 0}/{riskAssessment.total_contracts ?? 0}
+              </p>
+            </SectionCard>
+          </div>
+
+          <div className="space-y-2">
+            {(riskAssessment.factors || []).map((factor, idx) => (
+              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
+                <p className="text-sm text-slate-700">{factor}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </InfoCard>
+
+      <InfoCard title="Риск-индикаторы">
+        <div className="space-y-4">
+          {risk_indicators.map((indicator, idx) => (
+            <SectionCard
+              key={idx}
+              className={`border-l-4 ${
+                indicator.level === 'high'
+                  ? 'border-red-500'
+                  : indicator.level === 'medium'
+                  ? 'border-amber-500'
+                  : 'border-emerald-500'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-medium text-slate-900">{indicator.category}</h4>
+                <RiskBadge level={indicator.level} />
+              </div>
+              <p className="text-sm text-slate-700 mb-2">{indicator.description}</p>
+              <p className="text-xs text-slate-500">Влияние: {indicator.impact}</p>
+            </SectionCard>
+          ))}
+        </div>
+      </InfoCard>
+    </div>
+  );
 
   const tabs = [
     { value: 'overview', label: 'Обзор', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <OverviewTab /> },
-    { value: 'info', label: 'Информация', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <CompanyInfoTab /> },
-    { value: 'tenders', label: 'Тендеры', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <TendersTab /> },
-    { value: 'contracts', label: 'Контракты', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <ContractsTab /> },
-    { value: 'complaints', label: 'Жалобы', icon: <AlertTriangle className="w-4 h-4" strokeWidth={1.5} />, content: <ComplaintsTab /> },
-    { value: 'registries', label: 'Реестры', icon: <ShieldAlert className="w-4 h-4" strokeWidth={1.5} />, content: <RegistriesTab /> },
+    { value: 'subject', label: 'Участник', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <SubjectTab /> },
+    { value: 'addresses', label: 'Адреса', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} />, content: <AddressesTab /> },
+    { value: 'employees', label: 'Сотрудники', icon: <Users className="w-4 h-4" strokeWidth={1.5} />, content: <EmployeesTab /> },
+    { value: 'announcements', label: 'Объявления', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <AnnouncementsTab /> },
+    { value: 'applications', label: 'Заявки', icon: <Receipt className="w-4 h-4" strokeWidth={1.5} />, content: <ApplicationsTab /> },
+    { value: 'contracts', label: 'Договоры', icon: <FileCheck className="w-4 h-4" strokeWidth={1.5} />, content: <ContractsTab /> },
+    { value: 'acts', label: 'Акты', icon: <FileCheck className="w-4 h-4" strokeWidth={1.5} />, content: <ActsTab /> },
+    { value: 'rnu', label: 'РНУ', icon: <ShieldAlert className="w-4 h-4" strokeWidth={1.5} />, content: <RnuTab /> },
     { value: 'risk', label: 'Риск-анализ', icon: <TrendingUp className="w-4 h-4" strokeWidth={1.5} />, content: <RiskTab /> },
   ];
 
@@ -413,13 +475,15 @@ export default function SupplierProfile() {
         <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-semibold text-slate-900">{company.name_ru}</h1>
+              <div className="flex items-center gap-3 mb-2 flex-wrap">
+                <h1 className="text-3xl font-semibold text-slate-900">{subject.name_ru}</h1>
                 <RegistryBadge isBlacklisted={company.is_blacklisted} />
               </div>
-              <p className="text-sm text-slate-500 mb-3">{company.name_kz}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-slate-500">БИН: {company.bin}</span>
+              <p className="text-sm text-slate-500 mb-3">{subject.full_name_kz}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono text-slate-500">БИН: {subject.bin}</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-xs text-slate-500">PID: {subject.pid}</span>
                 <span className="text-slate-300">|</span>
                 {company.roles.map((role, idx) => (
                   <RoleBadge key={idx} role={role} />
@@ -435,31 +499,15 @@ export default function SupplierProfile() {
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
             <div className="text-center">
               <p className="text-xs text-slate-500 mb-1">Уровень доверия</p>
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${
-                      company.trust_score >= 70
-                        ? 'bg-emerald-500'
-                        : company.trust_score >= 40
-                        ? 'bg-amber-500'
-                        : 'bg-red-500'
-                    }`}
-                    style={{ width: `${company.trust_score}%` }}
-                  />
-                </div>
-                <span className="text-lg font-semibold text-slate-900">{company.trust_score}</span>
-              </div>
+              <p className="text-lg font-semibold text-slate-900">{company.trust_score}/100</p>
             </div>
             <div className="text-center border-l border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Уровень риска</p>
+              <p className="text-xs text-slate-500 mb-1">Тип участника</p>
+              <p className="text-sm font-medium text-slate-900">{getTypeSupplierLabel(subject.type_supplier)}</p>
+            </div>
+            <div className="text-center border-l border-slate-200">
+              <p className="text-xs text-slate-500 mb-1">Статус риска</p>
               <RiskBadge level={company.risk_level} />
-            </div>
-            <div className="text-center border-l border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Статус</p>
-              <p className="text-sm font-medium text-slate-900">
-                {company.is_blacklisted ? 'Недобросовестный' : 'Чист'}
-              </p>
             </div>
           </div>
         </div>
