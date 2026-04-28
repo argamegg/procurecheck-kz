@@ -21,7 +21,7 @@ import {
   getTypeSupplierLabel,
 } from '@/utils/ows';
 import { toast } from 'sonner';
-import { ArrowLeft, Building2, MapPin, FileText, Receipt, ShieldAlert, TrendingUp, FileCheck, MessageSquareWarning } from 'lucide-react';
+import { ArrowLeft, Building2, FileText, Receipt, ShieldAlert, TrendingUp, FileCheck, MessageSquareWarning } from 'lucide-react';
 import { SearchInput } from '@/components/shared/SearchInput';
 import { PrimaryButton } from '@/components/shared/Buttons';
 
@@ -208,87 +208,105 @@ export default function SupplierProfile() {
   const SubjectTab = () => (
     <div data-testid="subject-tab" className="space-y-6">
       <InfoCard title="Карточка участника">
-        <dl className="grid md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <dt className="text-xs font-medium text-slate-500">PID</dt>
-            <dd className="mt-1 text-slate-900">{subject.pid}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">БИН</dt>
-            <dd className="mt-1 font-mono text-slate-900">{subject.bin}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Краткое наименование (РУ)</dt>
-            <dd className="mt-1 text-slate-900">{subject.name_ru}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Краткое наименование (КЗ)</dt>
-            <dd className="mt-1 text-slate-900">{subject.name_kz || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Полное наименование (РУ)</dt>
-            <dd className="mt-1 text-slate-900">{subject.full_name_ru || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Полное наименование (КЗ)</dt>
-            <dd className="mt-1 text-slate-900">{subject.full_name_kz || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Тип поставщика</dt>
-            <dd className="mt-1 text-slate-900">{getTypeSupplierLabel(subject.type_supplier)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Дата регистрации</dt>
-            <dd className="mt-1 text-slate-900">{formatDate(subject.crdate)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Свидетельство</dt>
-            <dd className="mt-1 text-slate-900">{subject.number_reg || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">ОКЭД</dt>
-            <dd className="mt-1 text-slate-900">{(subject.oked_list || []).join(', ') || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Руководитель</dt>
-            <dd className="mt-1 text-slate-900">{directorEmployee?.fio || 'Не указано'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Роли</dt>
-            <dd className="mt-1 flex flex-wrap gap-1">
-              {company.roles.map((role, idx) => (
-                <RoleBadge key={idx} role={role} />
-              ))}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-slate-500">Индекс обновления</dt>
-            <dd className="mt-1 text-slate-900">{formatDateTime(subject.index_date)}</dd>
-          </div>
-        </dl>
-      </InfoCard>
-    </div>
-  );
+        <div className="space-y-6">
+          <dl className="grid md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt className="text-xs font-medium text-slate-500">PID</dt>
+              <dd className="mt-1 text-slate-900">{subject.pid}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">БИН</dt>
+              <dd className="mt-1 font-mono text-slate-900">{subject.bin}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Краткое наименование (РУ)</dt>
+              <dd className="mt-1 text-slate-900">{subject.name_ru}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Краткое наименование (КЗ)</dt>
+              <dd className="mt-1 text-slate-900">{subject.name_kz || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Полное наименование (РУ)</dt>
+              <dd className="mt-1 text-slate-900">{subject.full_name_ru || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Полное наименование (КЗ)</dt>
+              <dd className="mt-1 text-slate-900">{subject.full_name_kz || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Тип поставщика</dt>
+              <dd className="mt-1 text-slate-900">{getTypeSupplierLabel(subject.type_supplier)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Дата регистрации</dt>
+              <dd className="mt-1 text-slate-900">{formatDate(subject.crdate)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Свидетельство</dt>
+              <dd className="mt-1 text-slate-900">{subject.number_reg || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">ОКЭД</dt>
+              <dd className="mt-1 text-slate-900">{(subject.oked_list || []).join(', ') || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Руководитель</dt>
+              <dd className="mt-1 text-slate-900">{directorEmployee?.fio || 'Не указано'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Роли</dt>
+              <dd className="mt-1 flex flex-wrap gap-1">
+                {company.roles.map((role, idx) => (
+                  <RoleBadge key={idx} role={role} />
+                ))}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Индекс обновления</dt>
+              <dd className="mt-1 text-slate-900">{formatDateTime(subject.index_date)}</dd>
+            </div>
+          </dl>
 
-  const AddressesTab = () => (
-    <div data-testid="addresses-tab" className="space-y-6">
-      <InfoCard title={`Адреса участника (${subject_addresses.length})`}>
-        <div className="space-y-4">
-          {subject_addresses.map((address) => (
-            <SectionCard key={address.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="font-medium text-slate-900">{getAddressTypeLabel(address.address_type)}</p>
-                  <p className="text-sm text-slate-700">{address.address}</p>
-                  <p className="text-xs text-slate-500">КАТО: {address.kato_code || 'Не указано'}</p>
-                </div>
-                <div className="text-right text-xs text-slate-500">
-                  <p>{address.phone || 'Телефон не указан'}</p>
-                  <p className="mt-1">Обновлено: {formatDate(address.edit_date)}</p>
-                </div>
+          <div className="space-y-4 border-t border-slate-200 pt-6">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Адреса участника</h3>
+            </div>
+
+            {subject_addresses.length === 0 ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                Нет данных
               </div>
-            </SectionCard>
-          ))}
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {subject_addresses.map((address) => (
+                  <SectionCard key={address.id}>
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-slate-900">{getAddressTypeLabel(address.address_type)}</h4>
+                      <dl className="space-y-3 text-sm">
+                        <div>
+                          <dt className="text-xs font-medium text-slate-500">Полный адрес</dt>
+                          <dd className="mt-1 text-slate-900">{address.address || 'Не указано'}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-medium text-slate-500">КАТО</dt>
+                          <dd className="mt-1 text-slate-900">{address.kato_code || 'Не указано'}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-medium text-slate-500">Дата обновления</dt>
+                          <dd className="mt-1 text-slate-900">{formatDate(address.edit_date)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-medium text-slate-500">Телефон</dt>
+                          <dd className="mt-1 text-slate-900">{address.phone || 'Не указано'}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </SectionCard>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </InfoCard>
     </div>
@@ -934,7 +952,6 @@ export default function SupplierProfile() {
   const tabs = [
     { value: 'overview', label: 'Обзор', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <OverviewTab /> },
     { value: 'subject', label: 'Участник', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <SubjectTab /> },
-    { value: 'addresses', label: 'Адреса', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} />, content: <AddressesTab /> },
     { value: 'announcements', label: 'Объявления', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <AnnouncementsTab /> },
     { value: 'applications', label: 'Заявки', icon: <Receipt className="w-4 h-4" strokeWidth={1.5} />, content: <ApplicationsTab /> },
     { value: 'lots', label: 'Лоты', icon: <Receipt className="w-4 h-4" strokeWidth={1.5} />, content: <LotsTab /> },
