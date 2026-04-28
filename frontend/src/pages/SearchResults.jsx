@@ -131,7 +131,7 @@ export default function SearchResults() {
     {
       header: 'Риск',
       key: 'risk_level',
-      render: (row) => <RiskBadge level={row.risk_level} />,
+      render: (row) => <RiskBadge level={row.risk_level} label={row.risk_label} />,
     },
   ];
 

@@ -193,7 +193,7 @@ export default function Home() {
                         : 'bg-red-100 text-red-700'
                     }`}
                   >
-                    {item.risk_level === 'low' ? 'Низкий риск' : item.risk_level === 'medium' ? 'Средний риск' : 'Высокий риск'}
+                    {item.risk_label || (item.risk_level === 'low' ? 'Низкий риск' : item.risk_level === 'medium' ? 'Средний риск' : 'Высокий риск')}
                   </div>
                 </div>
               ))}
@@ -236,7 +236,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <RiskBadge level={company.risk_level} />
+                      <RiskBadge level={company.risk_level} label={company.risk_label} />
                       <span className="text-xs text-slate-500">Доверие: {company.trust_score}/100</span>
                     </div>
                   </div>
@@ -279,7 +279,7 @@ export default function Home() {
                         <p className="text-xs text-slate-500 font-mono mt-1">БИН: {company.bin}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <RiskBadge level={company.risk_level} />
+                        <RiskBadge level={company.risk_level} label={company.risk_label} />
                         <span className="text-xs text-slate-500">Доверие: {company.trust_score}/100</span>
                       </div>
                     </div>

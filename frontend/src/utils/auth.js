@@ -73,6 +73,7 @@ export const addSearchHistoryEntry = (company) => {
     bin: company.bin,
     name_ru: company.name_ru,
     risk_level: company.risk_level,
+    risk_label: company.risk_label,
     trust_score: company.trust_score,
     is_blacklisted: company.is_blacklisted,
     viewed_at: new Date().toISOString(),
@@ -94,6 +95,10 @@ export const removeAuthUser = () => {
 
 export const isAuthenticated = () => {
   return !!getAuthToken();
+};
+
+export const isAdmin = () => {
+  return getAuthUser()?.role === 'admin';
 };
 
 export const logout = () => {

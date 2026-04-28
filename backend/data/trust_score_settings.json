@@ -1,0 +1,24 @@
+{
+  "weights": {
+    "participation": 10,
+    "competition": 10,
+    "win_rate": 15,
+    "execution": 35,
+    "quality": 15,
+    "risk_penalty": 15
+  },
+  "thresholds": {
+    "high_trust": 80,
+    "reliable": 60,
+    "medium_risk": 40,
+    "high_risk": 20,
+    "critical_risk": 0
+  },
+  "risk_levels": {
+    "low_min": 70,
+    "medium_min": 30,
+    "low_label": "Низкий риск",
+    "medium_label": "Средний риск",
+    "high_label": "Высокий риск"
+  }
+}

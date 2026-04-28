@@ -438,7 +438,7 @@ export default function SupplierProfile() {
     const rows = trd_apps.map((application) => {
       const announcement = buyById[application.buy_id];
       const isWinner = contractBuyIds.has(application.buy_id);
-      const status = isWinner ? 'Победила' : announcement?.ref_buy_status_id === 320 ? 'Подана' : 'Отклонена';
+      const status = application.status || (isWinner ? 'Победила' : announcement?.ref_buy_status_id === 320 ? 'Подана' : 'Отклонена');
       return {
         ...application,
         bid_number: application.prot_number || `Заявка по объявлению ${announcement?.number_anno || application.buy_id}`,
@@ -446,8 +446,8 @@ export default function SupplierProfile() {
         supplier_name: company.name_ru,
         offered_amount: getApplicationAmount(application),
         status,
-        place: isWinner ? 1 : null,
-        result: isWinner ? 'Победитель' : status === 'Подана' ? 'На рассмотрении' : 'Проиграл',
+        place: application.place ?? (isWinner ? 1 : null),
+        result: application.result || (isWinner ? 'Победитель' : status === 'Подана' ? 'На рассмотрении' : 'Проиграл'),
       };
     });
 
@@ -580,9 +580,9 @@ export default function SupplierProfile() {
         return {
           ...lot,
           announcement_number: announcement?.number_anno || 'Не указано',
-          category: 'Не указано',
+          category: lot.category || 'Не указано',
           amount_value: Number(unit?.total_sum_wnds || lot.amount || 0),
-          winner_name: contract ? company.name_ru : 'Не определен',
+          winner_name: lot.winner_name || (contract ? company.name_ru : 'Не определен'),
           contract_number: contract?.contract_number || 'Нет договора',
           status_label: getLotStatusLabel(lot.ref_lot_status_id),
         };
@@ -856,7 +856,7 @@ export default function SupplierProfile() {
 
         <InfoCard title="Уровень риска">
           <div className="flex items-center justify-center py-8">
-            <RiskBadge level={company.risk_level} className="text-lg px-6 py-3" />
+            <RiskBadge level={company.risk_level} label={company.risk_label} className="text-lg px-6 py-3" />
           </div>
         </InfoCard>
       </div>
@@ -1000,7 +1000,7 @@ export default function SupplierProfile() {
             </div>
             <div className="text-center border-l border-slate-200">
               <p className="text-xs text-slate-500 mb-1">Статус риска</p>
-              <RiskBadge level={company.risk_level} />
+              <RiskBadge level={company.risk_level} label={company.risk_label} />
             </div>
           </div>
         </div>

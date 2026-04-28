@@ -62,4 +62,15 @@ export const lotsAPI = {
   getById: (lotId) => apiClient.get(`/lots/${lotId}`),
 };
 
+export const adminAPI = {
+  getOptions: () => apiClient.get('/admin/options'),
+  listEntity: (entity) => apiClient.get(`/admin/${entity}`),
+  createEntity: (entity, payload) => apiClient.post(`/admin/${entity}`, payload),
+  updateEntity: (entity, itemId, payload) => apiClient.put(`/admin/${entity}/${itemId}`, payload),
+  deleteEntity: (entity, itemId) => apiClient.delete(`/admin/${entity}/${itemId}`),
+  getTrustScoreSettings: () => apiClient.get('/admin/trust-score-settings'),
+  updateTrustScoreSettings: (payload) => apiClient.put('/admin/trust-score-settings', payload),
+  resetTrustScoreSettings: () => apiClient.post('/admin/trust-score-settings/reset'),
+};
+
 export default apiClient;

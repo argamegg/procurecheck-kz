@@ -14,6 +14,7 @@ import AnnouncementDetail from '@/pages/AnnouncementDetail';
 import BidDetail from '@/pages/BidDetail';
 import LotDetail from '@/pages/LotDetail';
 import RnuRegistry from '@/pages/RnuRegistry';
+import AdminPanel from '@/pages/AdminPanel';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import '@/App.css';
 
@@ -116,6 +117,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <RnuRegistry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/trust-score-settings"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminPanel />
               </ProtectedRoute>
             }
           />

@@ -24,7 +24,7 @@ export const StatusBadge = ({ status, className }) => {
   );
 };
 
-export const RiskBadge = ({ level, className }) => {
+export const RiskBadge = ({ level, label, className }) => {
   const riskConfig = {
     high: { color: 'bg-red-100 text-red-700 border-red-200', label: 'Высокий риск' },
     medium: { color: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Средний риск' },
@@ -39,7 +39,7 @@ export const RiskBadge = ({ level, className }) => {
       variant="outline"
       className={cn('text-xs font-medium border', config.color, className)}
     >
-      {config.label}
+      {label || config.label}
     </Badge>
   );
 };
