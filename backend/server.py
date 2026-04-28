@@ -604,6 +604,14 @@ def build_roles(subject: Dict[str, Any]) -> List[str]:
     return roles
 
 
+def extract_subject_role_flags(subject_data: Dict[str, Any]) -> Dict[str, bool]:
+    return {
+        "is_supplier": bool(int(subject_data.get("supplier") or 0) == 1 or subject_data.get("type_supplier") in {1, 2, 3}),
+        "is_customer": bool(int(subject_data.get("customer") or 0) == 1),
+        "is_organizer": bool(int(subject_data.get("organizer") or 0) == 1 or int(subject_data.get("is_single_org") or 0) == 1),
+    }
+
+
 LOCAL_CONTRACT_STATUS_LABELS = {
     320: "На исполнении",
     350: "Исполнен",
@@ -1121,6 +1129,328 @@ def compute_company_assessment(
     }
 
 
+def map_score_to_level(score: float, high_threshold: float = 80.0, medium_threshold: float = 60.0) -> Dict[str, str]:
+    if score >= high_threshold:
+        return {"level": "high", "label": "Высокая прозрачность"}
+    if score >= medium_threshold:
+        return {"level": "medium", "label": "Средняя прозрачность"}
+    return {"level": "low", "label": "Низкая прозрачность"}
+
+
+def is_customer_related_complaint(
+    complaint: ComplaintRecord,
+    subject_bin: str,
+    subject_name: str,
+    announcement_ids: set[int],
+    contract_ids: set[int],
+) -> bool:
+    if complaint.customer_bin and str(complaint.customer_bin) == subject_bin:
+        return True
+    if complaint.customer_name and complaint.customer_name.strip().lower() == subject_name.strip().lower():
+        return True
+    if complaint.related_tender_id and int(complaint.related_tender_id) in announcement_ids:
+        return True
+    if complaint.related_contract_id and int(complaint.related_contract_id) in contract_ids:
+        return True
+    return False
+
+
+def build_customer_context(
+    subject_data: Dict[str, Any],
+    all_profiles: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    subject_bin = str(subject_data.get("bin") or "")
+    subject_pid = int(subject_data.get("pid") or 0)
+    subject_name = subject_data.get("name_ru") or subject_data.get("full_name_ru") or ""
+
+    announcement_map: Dict[int, TrdBuyRecord] = {}
+    contract_map: Dict[int, ContractRecord] = {}
+    organizer_announcement_ids: set[int] = set()
+
+    for profile in all_profiles:
+        for raw_announcement in profile.get("trd_buys", []):
+            announcement_id = int(raw_announcement.get("id") or 0)
+            if not announcement_id:
+                continue
+            if (
+                str(raw_announcement.get("customer_bin") or "") == subject_bin
+                or int(raw_announcement.get("customer_pid") or 0) == subject_pid
+            ):
+                announcement_map[announcement_id] = TrdBuyRecord(**raw_announcement)
+            if (
+                str(raw_announcement.get("org_bin") or "") == subject_bin
+                or int(raw_announcement.get("org_pid") or 0) == subject_pid
+            ):
+                organizer_announcement_ids.add(announcement_id)
+
+        for raw_contract in profile.get("contracts", []):
+            contract_id = int(raw_contract.get("id") or 0)
+            if not contract_id:
+                continue
+            if (
+                str(raw_contract.get("customer_bin") or "") == subject_bin
+                or int(raw_contract.get("customer_id") or 0) == subject_pid
+            ):
+                contract_map[contract_id] = ContractRecord(**raw_contract)
+
+    announcement_ids = set(announcement_map.keys())
+    contract_ids = set(contract_map.keys())
+    contract_root_ids = {int(contract.root_id) for contract in contract_map.values() if contract.root_id}
+    application_map: Dict[str, TrdAppRecord] = {}
+    act_map: Dict[int, ActRecord] = {}
+    complaint_map: Dict[str, ComplaintRecord] = {}
+
+    for profile in all_profiles:
+        for raw_application in profile.get("trd_apps", []):
+            buy_id = int(raw_application.get("buy_id") or 0)
+            if buy_id and buy_id in announcement_ids:
+                application = TrdAppRecord(**raw_application)
+                application_map[str(application.id)] = application
+
+        for raw_act in profile.get("acts", []):
+            contract_id = int(raw_act.get("contract_id") or 0)
+            contract_root_id = int(raw_act.get("contract_root_id") or 0)
+            customer_id = int(raw_act.get("customer_id") or 0)
+            if contract_id in contract_ids or contract_root_id in contract_root_ids or customer_id == subject_pid:
+                act = ActRecord(**raw_act)
+                act_map[int(act.id)] = act
+
+        for raw_complaint in profile.get("complaints", []):
+            complaint = map_complaint_to_record(raw_complaint)
+            if is_customer_related_complaint(complaint, subject_bin, subject_name, announcement_ids, contract_ids):
+                complaint_map[str(complaint.id)] = complaint
+
+    return {
+        "announcements": list(announcement_map.values()),
+        "applications": list(application_map.values()),
+        "contracts": list(contract_map.values()),
+        "acts": list(act_map.values()),
+        "complaints": list(complaint_map.values()),
+        "organizer_announcements_count": len(organizer_announcement_ids),
+    }
+
+
+def compute_customer_transparency_assessment(
+    subject_data: Dict[str, Any],
+    announcements: List[TrdBuyRecord],
+    applications: List[TrdAppRecord],
+    contracts: List[ContractRecord],
+    acts: List[ActRecord],
+    complaints: List[ComplaintRecord],
+) -> Dict[str, Any]:
+    total_announcements = len(announcements)
+    total_contracts = len(contracts)
+    completed_contracts = [contract for contract in contracts if is_completed_contract(contract)]
+    announcement_ids = {int(announcement.id) for announcement in announcements}
+    applications_by_buy: Dict[int, List[TrdAppRecord]] = {}
+
+    for application in applications:
+        if application.buy_id:
+            applications_by_buy.setdefault(int(application.buy_id), []).append(application)
+
+    participant_counts: List[int] = []
+    for announcement_id in announcement_ids:
+        unique_participants = {
+            str(application.supplier_bin_iin)
+            for application in applications_by_buy.get(announcement_id, [])
+            if application.supplier_bin_iin
+        }
+        participant_counts.append(len(unique_participants))
+
+    average_participants = round(sum(participant_counts) / len(participant_counts), 2) if participant_counts else 0.0
+
+    single_source_count = sum(1 for announcement in announcements if int(announcement.ref_trade_methods_id or 0) == 2)
+    single_source_percentage = round((single_source_count / total_announcements) * 100, 2) if total_announcements else 0.0
+
+    canceled_or_failed_count = sum(
+        1
+        for announcement in announcements
+        if any(marker in get_buy_status_name(announcement).lower() for marker in ("отмен", "несостоя", "не состоя"))
+    )
+    canceled_or_failed_percentage = round((canceled_or_failed_count / total_announcements) * 100, 2) if total_announcements else 0.0
+
+    total_complaints = len(complaints)
+    satisfied_complaints = [complaint for complaint in complaints if complaint_status_bucket(complaint) == "satisfied"]
+    satisfied_complaints_percentage = round((len(satisfied_complaints) / total_complaints) * 100, 2) if total_complaints else 0.0
+
+    execution_percentage = round((len(completed_contracts) / total_contracts) * 100, 2) if total_contracts else 0.0
+
+    change_frequency_percentage: Optional[float] = None
+
+    competition_score = min(100.0, (average_participants / 4.0) * 100.0) if average_participants else 0.0
+    single_source_score = max(0.0, 100.0 - single_source_percentage)
+    stability_score = max(0.0, 100.0 - canceled_or_failed_percentage)
+    complaints_score = max(0.0, 100.0 - ((total_complaints / max(total_announcements, 1)) * 25.0)) if total_announcements else 100.0
+    satisfied_complaints_score = max(0.0, 100.0 - satisfied_complaints_percentage)
+    execution_score = execution_percentage if total_contracts else 50.0
+
+    component_weights = {
+        "competition": 20,
+        "single_source": 15,
+        "stability": 15,
+        "complaints": 15,
+        "satisfied_complaints": 15,
+        "execution": 20,
+    }
+
+    weighted_score = (
+        competition_score * component_weights["competition"]
+        + single_source_score * component_weights["single_source"]
+        + stability_score * component_weights["stability"]
+        + complaints_score * component_weights["complaints"]
+        + satisfied_complaints_score * component_weights["satisfied_complaints"]
+        + execution_score * component_weights["execution"]
+    ) / sum(component_weights.values())
+
+    transparency_score = round(max(0.0, min(100.0, weighted_score)))
+    transparency_bucket = map_score_to_level(transparency_score)
+
+    flags: List[str] = []
+    if average_participants and average_participants < 2:
+        flags.append("Низкая средняя конкуренция в закупках заказчика.")
+    if single_source_percentage >= 40:
+        flags.append("Высокая доля закупок из одного источника.")
+    if canceled_or_failed_percentage >= 20:
+        flags.append("Заметная доля отмененных или несостоявшихся закупок.")
+    if len(satisfied_complaints) > 0:
+        flags.append("Есть удовлетворенные жалобы по закупкам заказчика.")
+    if execution_percentage and execution_percentage < 60:
+        flags.append("Низкая доля успешно исполненных договоров.")
+    if not flags:
+        flags.append("Критичных сигналов по прозрачности закупочной деятельности не выявлено.")
+
+    if total_announcements == 0 and total_contracts == 0:
+        headline = "Недостаточно закупочных данных для полноценной оценки прозрачности заказчика."
+    elif transparency_score >= 80:
+        headline = "Закупочная деятельность выглядит прозрачной: конкуренция и исполнение договоров на хорошем уровне."
+    elif transparency_score >= 60:
+        headline = "Прозрачность закупок в целом стабильная, но отдельные показатели требуют внимания."
+    else:
+        headline = "Есть сигналы, которые могут указывать на сниженный уровень прозрачности закупочной деятельности."
+
+    return {
+        "score": transparency_score,
+        "score_label": "Customer Transparency Score",
+        "title": "Индекс прозрачности заказчика",
+        "headline": headline,
+        "bucket": transparency_bucket,
+        "explanation": "Индекс прозрачности заказчика — это показатель, отражающий качество и открытость проведения закупок. Оценка формируется на основе уровня конкуренции, количества жалоб, стабильности процедур и исполнения договоров.",
+        "flags": flags,
+        "metrics": {
+            "competition_level": {
+                "label": "Уровень конкуренции",
+                "value": average_participants,
+                "display_value": f"{average_participants:.2f}" if average_participants else "0.00",
+                "suffix": "участника в среднем",
+                "description": "Чем выше конкуренция, тем более открыты закупки",
+            },
+            "single_source_share": {
+                "label": "Закупки из одного источника",
+                "value": single_source_percentage,
+                "display_value": f"{single_source_percentage:.0f}%",
+                "description": "Высокая доля может указывать на низкую конкуренцию",
+            },
+            "canceled_share": {
+                "label": "Отмененные и несостоявшиеся закупки",
+                "value": canceled_or_failed_percentage,
+                "display_value": f"{canceled_or_failed_percentage:.0f}%",
+                "description": "Частые отмены снижают стабильность закупочной деятельности",
+            },
+            "complaints_count": {
+                "label": "Жалобы",
+                "value": total_complaints,
+                "display_value": str(total_complaints),
+                "description": "Показывает уровень недовольства участников",
+            },
+            "satisfied_complaints_share": {
+                "label": "Удовлетворенные жалобы",
+                "value": satisfied_complaints_percentage,
+                "display_value": f"{satisfied_complaints_percentage:.0f}%",
+                "description": "Высокое значение указывает на наличие проблем в закупках",
+            },
+            "execution_rate": {
+                "label": "Исполнение договоров",
+                "value": execution_percentage,
+                "display_value": f"{execution_percentage:.0f}%",
+                "description": "Показывает эффективность работы с поставщиками",
+            },
+            "change_frequency": {
+                "label": "Стабильность условий",
+                "value": change_frequency_percentage,
+                "display_value": "Нет данных" if change_frequency_percentage is None else f"{change_frequency_percentage:.0f}%",
+                "description": "Частые изменения могут снижать прозрачность",
+            },
+        },
+        "summary": {
+            "announcements": total_announcements,
+            "applications": len(applications),
+            "contracts": total_contracts,
+            "completed_contracts": len(completed_contracts),
+            "complaints": total_complaints,
+            "satisfied_complaints": len(satisfied_complaints),
+        },
+    }
+
+
+def build_role_analytics(
+    subject_data: Dict[str, Any],
+    supplier_assessment: Dict[str, Any],
+    customer_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    role_flags = extract_subject_role_flags(subject_data)
+    analytics: Dict[str, Any] = {
+        "roles": role_flags,
+        "primary_role": "supplier" if role_flags["is_supplier"] else "customer" if role_flags["is_customer"] else "organizer" if role_flags["is_organizer"] else "participant",
+        "primary_score_label": "Supplier Trust Score",
+        "primary_score_value": supplier_assessment["company"].trust_score,
+        "primary_status_label": supplier_assessment["company"].risk_label,
+        "supplier": None,
+        "customer": None,
+        "organizer": None,
+    }
+
+    if role_flags["is_supplier"]:
+        analytics["supplier"] = {
+            "score": supplier_assessment["company"].trust_score,
+            "score_label": "Supplier Trust Score",
+            "risk_level": supplier_assessment["company"].risk_level,
+            "risk_label": supplier_assessment["company"].risk_label,
+            "risk_indicators": [indicator.model_dump() for indicator in supplier_assessment["risk_indicators"]],
+            "assessment": supplier_assessment["risk_assessment"],
+        }
+
+    if role_flags["is_customer"] and customer_context is not None:
+        customer_assessment = compute_customer_transparency_assessment(
+            subject_data,
+            customer_context.get("announcements", []),
+            customer_context.get("applications", []),
+            customer_context.get("contracts", []),
+            customer_context.get("acts", []),
+            customer_context.get("complaints", []),
+        )
+        analytics["customer"] = customer_assessment
+        if not role_flags["is_supplier"]:
+            analytics["primary_role"] = "customer"
+            analytics["primary_score_label"] = customer_assessment["score_label"]
+            analytics["primary_score_value"] = customer_assessment["score"]
+            analytics["primary_status_label"] = customer_assessment["bucket"]["label"]
+
+    organizer_count = int((customer_context or {}).get("organizer_announcements_count") or 0)
+    if role_flags["is_organizer"] or organizer_count > 0:
+        analytics["organizer"] = {
+            "title": "Роль организатора",
+            "description": "Организатор выполняет техническую и процедурную функцию в закупке. Для него не применяется отдельный trust score, но в профиле учитывается объем сопровождаемых процедур.",
+            "organized_announcements": organizer_count,
+        }
+        if analytics["primary_role"] == "participant":
+            analytics["primary_role"] = "organizer"
+            analytics["primary_score_label"] = "Организованные процедуры"
+            analytics["primary_score_value"] = organizer_count
+            analytics["primary_status_label"] = "Техническая роль"
+
+    return analytics
+
+
 def map_subject_to_company(subject: Dict[str, Any], is_blacklisted: bool = False) -> Company:
     risk_config = get_risk_config(ensure_trust_score_settings_file())
     return Company(
@@ -1242,6 +1572,7 @@ def map_complaint_to_record(raw: Dict[str, Any]) -> ComplaintRecord:
         description=raw.get("description") or raw.get("full_text") or raw.get("subject") or "Описание не указано",
         status=raw.get("status") or "Статус не указан",
         decision=raw.get("decision"),
+        customer_bin=raw.get("customer_bin"),
     )
 
 
@@ -1381,7 +1712,36 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
     acts: List[ActRecord] = []
 
     assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, [])
+    role_analytics = build_role_analytics(
+        subject,
+        assessment,
+        {
+            "announcements": trd_buys,
+            "applications": trd_apps,
+            "contracts": contracts,
+            "acts": acts,
+            "complaints": [],
+            "organizer_announcements_count": len(
+                [
+                    announcement
+                    for announcement in trd_buys
+                    if str(announcement.org_bin or "") == str(subject_record.bin)
+                    or int(announcement.org_pid or 0) == int(subject_record.pid or 0)
+                ]
+            ),
+        },
+    )
     company = assessment["company"]
+    if role_analytics.get("primary_role") == "customer" and role_analytics.get("customer"):
+        company.trust_score = int(role_analytics["customer"]["score"])
+        company.risk_label = role_analytics["customer"]["bucket"]["label"]
+        company.risk_level = (
+            "low"
+            if role_analytics["customer"]["score"] >= 80
+            else "medium"
+            if role_analytics["customer"]["score"] >= 60
+            else "high"
+        )
 
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
@@ -1401,6 +1761,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
         "data_source": "goszakup.gov.kz OWS v3",
         "risk_assessment": assessment["risk_assessment"],
+        "role_analytics": role_analytics,
     }
 
     return SupplierProfile(
@@ -1599,9 +1960,24 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
     rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
 
     assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries, complaints)
+    all_profiles = await get_local_profiles_snapshot()
+    customer_context = build_customer_context(subject.model_dump(), all_profiles)
+    role_analytics = build_role_analytics(subject.model_dump(), assessment, customer_context)
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
     regdate = parse_isoish_datetime(subject.regdate) or parse_isoish_datetime(subject.crdate)
+    company = assessment["company"]
+
+    if role_analytics.get("primary_role") == "customer" and role_analytics.get("customer"):
+        company.trust_score = int(role_analytics["customer"]["score"])
+        company.risk_label = role_analytics["customer"]["bucket"]["label"]
+        company.risk_level = (
+            "low"
+            if role_analytics["customer"]["score"] >= 80
+            else "medium"
+            if role_analytics["customer"]["score"] >= 60
+            else "high"
+        )
 
     summary = {
         **profile.get("summary", {}),
@@ -1616,10 +1992,11 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         "years_active": max(0, datetime.now().year - regdate.year) if regdate else 0,
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
         "risk_assessment": assessment["risk_assessment"],
+        "role_analytics": role_analytics,
     }
 
     return SupplierProfile(
-        company=assessment["company"],
+        company=company,
         summary=summary,
         subject=subject,
         subject_addresses=subject_addresses,

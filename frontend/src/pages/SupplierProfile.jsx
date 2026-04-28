@@ -78,6 +78,18 @@ const compareTableValues = (left, right, direction = 'asc') => {
   return direction === 'asc' ? result : -result;
 };
 
+const getCircularScoreColor = (score) => {
+  if (score >= 80) return '#10B981';
+  if (score >= 60) return '#F59E0B';
+  return '#EF4444';
+};
+
+const getTransparencyTone = (level) => {
+  if (level === 'high') return 'emerald';
+  if (level === 'medium') return 'amber';
+  return 'red';
+};
+
 export default function SupplierProfile() {
   const { bin } = useParams();
   const navigate = useNavigate();
@@ -140,6 +152,15 @@ export default function SupplierProfile() {
   } = profile;
 
   const riskAssessment = summary?.risk_assessment || {};
+  const roleAnalytics = summary?.role_analytics || {};
+  const supplierAnalytics = roleAnalytics?.supplier || null;
+  const customerAnalytics = roleAnalytics?.customer || null;
+  const organizerAnalytics = roleAnalytics?.organizer || null;
+  const primaryRole = roleAnalytics?.primary_role || (company.supplier ? 'supplier' : company.customer ? 'customer' : company.organizer ? 'organizer' : 'participant');
+  const primaryScoreLabel = roleAnalytics?.primary_score_label || 'Supplier Trust Score';
+  const primaryScoreValue = roleAnalytics?.primary_score_value ?? company.trust_score;
+  const primaryStatusLabel = roleAnalytics?.primary_status_label || company.risk_label || 'Не указано';
+  const primaryScoreDisplay = primaryRole === 'organizer' ? String(primaryScoreValue ?? 0) : `${primaryScoreValue ?? 0}/100`;
   const requestedTab = searchParams.get('tab') || 'overview';
   const directorEmployee =
     subject_employees.find((employee) => {
@@ -829,123 +850,219 @@ export default function SupplierProfile() {
 
   const RiskTab = () => (
     <div data-testid="risk-tab" className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        <InfoCard title="Уровень доверия">
-          <div className="flex items-center justify-center py-8">
-            <div className="relative w-48 h-48">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle cx="96" cy="96" r="80" stroke="#E5E7EB" strokeWidth="16" fill="none" />
-                <circle
-                  cx="96"
-                  cy="96"
-                  r="80"
-                  stroke={company.trust_score >= 70 ? '#10B981' : company.trust_score >= 40 ? '#F59E0B' : '#EF4444'}
-                  strokeWidth="16"
-                  fill="none"
-                  strokeDasharray={`${(company.trust_score / 100) * 502} 502`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-slate-900">{company.trust_score}</span>
-                <span className="text-xs text-slate-500">из 100</span>
+      {supplierAnalytics && (
+        <div className="space-y-6">
+          <InfoCard title="Supplier Trust Score">
+            <div className="space-y-4">
+              <p className="text-sm text-slate-700">
+                Оценка надежности поставщика на основе участия в закупках, побед, исполнения договоров, качества исполнения, жалоб и рисков.
+              </p>
+              <div className="grid md:grid-cols-2 gap-6">
+                <SectionCard className="p-6">
+                  <div className="flex items-center justify-center py-4">
+                    <div className="relative w-48 h-48">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="96" cy="96" r="80" stroke="#E5E7EB" strokeWidth="16" fill="none" />
+                        <circle
+                          cx="96"
+                          cy="96"
+                          r="80"
+                          stroke={getCircularScoreColor(supplierAnalytics.score)}
+                          strokeWidth="16"
+                          fill="none"
+                          strokeDasharray={`${(supplierAnalytics.score / 100) * 502} 502`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-4xl font-bold text-slate-900">{supplierAnalytics.score}</span>
+                        <span className="text-xs text-slate-500">из 100</span>
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard className="p-6">
+                  <div className="flex h-full flex-col items-center justify-center gap-4">
+                    <RiskBadge level={supplierAnalytics.risk_level} label={supplierAnalytics.risk_label} className="text-lg px-6 py-3" />
+                    <p className="text-sm text-center text-slate-600">
+                      {supplierAnalytics.assessment?.headline || 'Оценка сформирована по данным договоров, актов, жалоб и РНУ.'}
+                    </p>
+                  </div>
+                </SectionCard>
               </div>
             </div>
+          </InfoCard>
+
+          <InfoCard title="Как рассчитана оценка поставщика">
+            <div className="space-y-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Активные записи РНУ</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.active_rnu_entries ?? 0}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Расторгнутые договоры</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.terminated_contracts ?? 0}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Акты с просрочкой/штрафом</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_acts ?? 0}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Исполненные договоры</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {riskAssessment.completed_contracts ?? 0}/{riskAssessment.total_contracts ?? 0}
+                  </p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Подтвержденные жалобы</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.satisfied_complaints ?? 0}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Жалобы по договору</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.contract_related_complaints ?? 0}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Суммарная просрочка</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_days ?? 0} дн.</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Штрафы по актам</p>
+                  <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.fine_sum ?? 0)}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Сумма договоров</p>
+                  <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.contract_value ?? 0)}</p>
+                </SectionCard>
+                <SectionCard className="p-4">
+                  <p className="text-xs text-slate-500 mb-1">Стаж участника</p>
+                  <p className="text-lg font-semibold text-slate-900">{riskAssessment.years_active ?? 0} лет</p>
+                </SectionCard>
+              </div>
+
+              <div className="space-y-2">
+                {(riskAssessment.factors || []).map((factor, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
+                    <p className="text-sm text-slate-700">{factor}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </InfoCard>
+
+          <InfoCard title="Риск-индикаторы поставщика">
+            <div className="space-y-4">
+              {risk_indicators.map((indicator, idx) => (
+                <SectionCard
+                  key={idx}
+                  className={`border-l-4 ${
+                    indicator.level === 'high'
+                      ? 'border-red-500'
+                      : indicator.level === 'medium'
+                      ? 'border-amber-500'
+                      : 'border-emerald-500'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-slate-900">{indicator.category}</h4>
+                    <RiskBadge level={indicator.level} />
+                  </div>
+                  <p className="text-sm text-slate-700 mb-2">{indicator.description}</p>
+                  <p className="text-xs text-slate-500">Влияние: {indicator.impact}</p>
+                </SectionCard>
+              ))}
+            </div>
+          </InfoCard>
+        </div>
+      )}
+
+      {customerAnalytics && (
+        <div className="space-y-6">
+          <InfoCard title="Customer Transparency Score">
+            <div className="space-y-4">
+              <p className="text-sm text-slate-700">{customerAnalytics.explanation}</p>
+              <div className="grid md:grid-cols-2 gap-6">
+                <SectionCard className="p-6">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                    <p className="text-sm font-medium text-slate-500">Customer Transparency Score: {customerAnalytics.score} / 100</p>
+                    <p className="text-5xl font-bold text-slate-900">{customerAnalytics.score}</p>
+                    <InlineStatusBadge label={customerAnalytics.bucket?.label || 'Не указано'} tone={getTransparencyTone(customerAnalytics.bucket?.level)} />
+                  </div>
+                </SectionCard>
+
+                <SectionCard className="p-6">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-slate-900">Закупочная активность</h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm text-slate-700">
+                      <div>
+                        <p className="text-xs text-slate-500">Объявления</p>
+                        <p className="mt-1 font-semibold text-slate-900">{customerAnalytics.summary?.announcements ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Заявки участников</p>
+                        <p className="mt-1 font-semibold text-slate-900">{customerAnalytics.summary?.applications ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Договоры</p>
+                        <p className="mt-1 font-semibold text-slate-900">{customerAnalytics.summary?.contracts ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Жалобы</p>
+                        <p className="mt-1 font-semibold text-slate-900">{customerAnalytics.summary?.complaints ?? 0}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">{customerAnalytics.headline}</p>
+                  </div>
+                </SectionCard>
+              </div>
+            </div>
+          </InfoCard>
+
+          <InfoCard title="Показатели закупочной деятельности">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Object.values(customerAnalytics.metrics || {}).map((metric) => (
+                <SectionCard key={metric.label} className="p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{metric.label}</p>
+                  <p className="mt-3 text-2xl font-semibold text-slate-900">{metric.display_value}</p>
+                  {metric.suffix ? <p className="mt-1 text-sm text-slate-500">{metric.suffix}</p> : null}
+                  <p className="mt-3 text-sm text-slate-600">{metric.description}</p>
+                </SectionCard>
+              ))}
+            </div>
+          </InfoCard>
+
+          <InfoCard title="Аналитическая сводка заказчика">
+            <div className="space-y-3">
+              {(customerAnalytics.flags || []).map((flag, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
+                  <p className="text-sm text-slate-700">{flag}</p>
+                </div>
+              ))}
+            </div>
+          </InfoCard>
+        </div>
+      )}
+
+      {organizerAnalytics && (
+        <InfoCard title={organizerAnalytics.title || 'Роль организатора'}>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700">{organizerAnalytics.description}</p>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Организованные процедуры</p>
+              <p className="text-lg font-semibold text-slate-900">{organizerAnalytics.organized_announcements ?? 0}</p>
+            </SectionCard>
           </div>
         </InfoCard>
+      )}
 
-        <InfoCard title="Уровень риска">
-          <div className="flex items-center justify-center py-8">
-            <RiskBadge level={company.risk_level} label={company.risk_label} className="text-lg px-6 py-3" />
-          </div>
+      {!supplierAnalytics && !customerAnalytics && !organizerAnalytics && (
+        <InfoCard title="Аналитика участника">
+          <p className="text-sm text-slate-600">Для участника не удалось определить роль или собрать достаточный объем данных для аналитики.</p>
         </InfoCard>
-      </div>
-
-      <InfoCard title="Как рассчитана оценка">
-        <div className="space-y-4">
-          <p className="text-sm text-slate-700">
-            {riskAssessment.headline || 'Оценка сформирована по данным РНУ, договоров, актов и истории участия.'}
-          </p>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Активные записи РНУ</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.active_rnu_entries ?? 0}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Расторгнутые договоры</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.terminated_contracts ?? 0}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Акты с просрочкой/штрафом</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_acts ?? 0}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Исполненные договоры</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {riskAssessment.completed_contracts ?? 0}/{riskAssessment.total_contracts ?? 0}
-              </p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Подтвержденные жалобы</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.satisfied_complaints ?? 0}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Жалобы по договору</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.contract_related_complaints ?? 0}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Суммарная просрочка</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_days ?? 0} дн.</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Штрафы по актам</p>
-              <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.fine_sum ?? 0)}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Сумма договоров</p>
-              <p className="text-lg font-semibold text-slate-900">{formatCurrency(riskAssessment.contract_value ?? 0)}</p>
-            </SectionCard>
-            <SectionCard className="p-4">
-              <p className="text-xs text-slate-500 mb-1">Стаж участника</p>
-              <p className="text-lg font-semibold text-slate-900">{riskAssessment.years_active ?? 0} лет</p>
-            </SectionCard>
-          </div>
-
-          <div className="space-y-2">
-            {(riskAssessment.factors || []).map((factor, idx) => (
-              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                <div className="w-2 h-2 rounded-full bg-slate-400 mt-2"></div>
-                <p className="text-sm text-slate-700">{factor}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </InfoCard>
-
-      <InfoCard title="Риск-индикаторы">
-        <div className="space-y-4">
-          {risk_indicators.map((indicator, idx) => (
-            <SectionCard
-              key={idx}
-              className={`border-l-4 ${
-                indicator.level === 'high'
-                  ? 'border-red-500'
-                  : indicator.level === 'medium'
-                  ? 'border-amber-500'
-                  : 'border-emerald-500'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-medium text-slate-900">{indicator.category}</h4>
-                <RiskBadge level={indicator.level} />
-              </div>
-              <p className="text-sm text-slate-700 mb-2">{indicator.description}</p>
-              <p className="text-xs text-slate-500">Влияние: {indicator.impact}</p>
-            </SectionCard>
-          ))}
-        </div>
-      </InfoCard>
+      )}
     </div>
   );
 
@@ -959,7 +1076,7 @@ export default function SupplierProfile() {
     { value: 'acts', label: 'Акты', icon: <FileCheck className="w-4 h-4" strokeWidth={1.5} />, content: <ActsTab /> },
     { value: 'complaints', label: 'Жалобы', icon: <MessageSquareWarning className="w-4 h-4" strokeWidth={1.5} />, content: <ComplaintsTab /> },
     { value: 'rnu', label: 'РНУ', icon: <ShieldAlert className="w-4 h-4" strokeWidth={1.5} />, content: <RnuTab /> },
-    { value: 'risk', label: 'Риск-анализ', icon: <TrendingUp className="w-4 h-4" strokeWidth={1.5} />, content: <RiskTab /> },
+    { value: 'risk', label: 'Аналитика', icon: <TrendingUp className="w-4 h-4" strokeWidth={1.5} />, content: <RiskTab /> },
   ];
 
   return (
@@ -991,16 +1108,27 @@ export default function SupplierProfile() {
 
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
             <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">Уровень доверия</p>
-              <p className="text-lg font-semibold text-slate-900">{company.trust_score}/100</p>
+              <p className="text-xs text-slate-500 mb-1">{primaryScoreLabel}</p>
+              <p className="text-lg font-semibold text-slate-900">{primaryScoreDisplay}</p>
             </div>
             <div className="text-center border-l border-slate-200">
               <p className="text-xs text-slate-500 mb-1">Тип участника</p>
               <p className="text-sm font-medium text-slate-900">{getTypeSupplierLabel(subject.type_supplier)}</p>
             </div>
             <div className="text-center border-l border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Статус риска</p>
-              <RiskBadge level={company.risk_level} label={company.risk_label} />
+              <p className="text-xs text-slate-500 mb-1">
+                {primaryRole === 'customer' ? 'Уровень прозрачности' : primaryRole === 'organizer' ? 'Роль в системе' : 'Статус риска'}
+              </p>
+              {primaryRole === 'customer' ? (
+                <InlineStatusBadge
+                  label={primaryStatusLabel}
+                  tone={getTransparencyTone(customerAnalytics?.bucket?.level)}
+                />
+              ) : primaryRole === 'organizer' ? (
+                <InlineStatusBadge label={primaryStatusLabel} tone="blue" />
+              ) : (
+                <RiskBadge level={company.risk_level} label={company.risk_label} />
+              )}
             </div>
           </div>
         </div>
