@@ -112,11 +112,10 @@ export default function Login() {
             </form>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs font-medium text-blue-900 mb-2">Демо учетные записи:</p>
+              <p className="text-xs font-medium text-blue-900 mb-2">Демо вход:</p>
               <div className="text-xs text-blue-700 space-y-1">
                 <p>admin@procurecheck.kz / demo123 (Администратор)</p>
-                <p>analyst@procurecheck.kz / demo123 (Аналитик)</p>
-                <p>viewer@procurecheck.kz / demo123 (Просмотрщик)</p>
+                <p>user@procurecheck.kz / demo123 (Пользователь)</p>
               </div>
             </div>
           </CardContent>

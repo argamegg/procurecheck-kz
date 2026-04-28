@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 export const Navbar = () => {
   const navigate = useNavigate();
   const user = getAuthUser();
+  const roleLabel = user?.role === 'user' ? 'Пользователь' : 'Администратор';
 
   const handleLogout = () => {
     logout();
@@ -84,7 +85,7 @@ export const Navbar = () => {
               <div>
                 <p className="font-medium">{user?.full_name}</p>
                 <p className="text-xs text-slate-500">{user?.email}</p>
-                <p className="text-xs text-slate-500 capitalize">Роль: {user?.role}</p>
+                <p className="text-xs text-slate-500">Роль: {roleLabel}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

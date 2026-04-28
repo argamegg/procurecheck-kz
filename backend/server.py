@@ -43,6 +43,11 @@ GOSZAKUP_API_BASE = "https://ows.goszakup.gov.kz/v3"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 contract_status_cache: Optional[Dict[int, str]] = None
+DEMO_USERS = {
+    "admin@procurecheck.kz": {"full_name": "Admin", "role": "admin"},
+    "user@procurecheck.kz": {"full_name": "Пользователь", "role": "user"},
+}
+VALID_APP_ROLES = {"admin", "user"}
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1198,6 +1203,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user = await db.users.find_one({"email": email}, {"_id": 0})
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
+        if user.get("role") not in VALID_APP_ROLES:
+            raise HTTPException(status_code=401, detail="Unsupported user role")
         return User(**user)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication")
@@ -1207,18 +1214,13 @@ async def login(request: LoginRequest):
     user_data = await db.users.find_one({"email": request.email}, {"_id": 0})
     
     if not user_data:
-        if request.password == "demo123":
-            role_map = {
-                "admin@procurecheck.kz": "admin",
-                "analyst@procurecheck.kz": "analyst",
-                "viewer@procurecheck.kz": "viewer"
-            }
-            
+        demo_user = DEMO_USERS.get(request.email)
+        if request.password == "demo123" and demo_user:
             user_dict = {
                 "id": str(uuid.uuid4()),
                 "email": request.email,
-                "full_name": request.email.split('@')[0].title(),
-                "role": role_map.get(request.email, "analyst"),
+                "full_name": demo_user["full_name"],
+                "role": demo_user["role"],
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.users.insert_one(user_dict)
@@ -1226,6 +1228,24 @@ async def login(request: LoginRequest):
         else:
             raise HTTPException(status_code=401, detail="Неверные учетные данные")
     else:
+        demo_user = DEMO_USERS.get(request.email)
+        if user_data.get("role") not in VALID_APP_ROLES or not demo_user:
+            await db.users.delete_one({"email": request.email})
+            raise HTTPException(
+                status_code=401,
+                detail="Устаревшая демо-учетная запись удалена. Используйте admin@procurecheck.kz или user@procurecheck.kz."
+            )
+
+        desired_role = demo_user["role"]
+        desired_name = demo_user["full_name"]
+
+        if user_data.get("role") != desired_role or user_data.get("full_name") != desired_name:
+            await db.users.update_one(
+                {"email": request.email},
+                {"$set": {"role": desired_role, "full_name": desired_name}},
+            )
+            user_data["role"] = desired_role
+            user_data["full_name"] = desired_name
         user = User(**user_data)
     
     access_token = create_access_token(data={"sub": user.email, "role": user.role})

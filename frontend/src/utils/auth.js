@@ -2,6 +2,8 @@ const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 const SEARCH_HISTORY_KEY = 'company_search_history';
 const MAX_SEARCH_HISTORY_ITEMS = 5;
+const VALID_APP_ROLES = new Set(['admin', 'user']);
+const VALID_DEMO_EMAILS = new Set(['admin@procurecheck.kz', 'user@procurecheck.kz']);
 
 export const setAuthToken = (token) => {
   localStorage.setItem(TOKEN_KEY, token);
@@ -21,7 +23,24 @@ export const setAuthUser = (user) => {
 
 export const getAuthUser = () => {
   const user = localStorage.getItem(USER_KEY);
-  return user ? JSON.parse(user) : null;
+  if (!user) {
+    return null;
+  }
+
+  try {
+    const parsedUser = JSON.parse(user);
+
+    if (!VALID_APP_ROLES.has(parsedUser?.role) || !VALID_DEMO_EMAILS.has(parsedUser?.email)) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
+
+    return parsedUser;
+  } catch (error) {
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
 };
 
 const getSearchHistoryKey = () => {
