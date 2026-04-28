@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { ContentSwitcher } from '@/components/shared/ContentSwitcher';
 import { InfoCard, MetricCard, SectionCard } from '@/components/shared/Cards';
-import { RegistryBadge, RiskBadge, RoleBadge } from '@/components/shared/Badges';
+import { ComplaintStatusBadge, RegistryBadge, RiskBadge, RoleBadge } from '@/components/shared/Badges';
 import { SecondaryButton } from '@/components/shared/Buttons';
 import { DataTable } from '@/components/shared/DataTable';
 import { companiesAPI } from '@/utils/api';
@@ -16,12 +16,14 @@ import {
   getApplicationAmount,
   getBuyStatusLabel,
   getContractStatusLabel,
-  getEmployeeRoleLabel,
+  getLotStatusLabel,
   getTradeMethodLabel,
   getTypeSupplierLabel,
 } from '@/utils/ows';
 import { toast } from 'sonner';
-import { ArrowLeft, Building2, MapPin, Users, FileText, Receipt, ShieldAlert, TrendingUp, FileCheck } from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, FileText, Receipt, ShieldAlert, TrendingUp, FileCheck, MessageSquareWarning } from 'lucide-react';
+import { SearchInput } from '@/components/shared/SearchInput';
+import { PrimaryButton } from '@/components/shared/Buttons';
 
 const TengeIcon = ({ className = '' }) => (
   <span className={`inline-flex items-center justify-center text-lg font-semibold leading-none ${className}`}>
@@ -29,9 +31,57 @@ const TengeIcon = ({ className = '' }) => (
   </span>
 );
 
+const InlineStatusBadge = ({ label, tone = 'slate' }) => {
+  const tones = {
+    emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    amber: 'bg-amber-100 text-amber-700 border-amber-200',
+    red: 'bg-red-100 text-red-700 border-red-200',
+    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+    slate: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+
+  return (
+    <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${tones[tone] || tones.slate}`}>
+      {label}
+    </span>
+  );
+};
+
+const PaginationControls = ({ page, totalPages, onPageChange }) => (
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <p className="text-sm text-slate-500">Страница {page} из {totalPages}</p>
+    <div className="flex flex-wrap gap-2">
+      <SecondaryButton onClick={() => onPageChange(1)} disabled={page === 1}>Первая</SecondaryButton>
+      <SecondaryButton onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1}>Назад</SecondaryButton>
+      <SecondaryButton onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages}>Вперед</SecondaryButton>
+      <SecondaryButton onClick={() => onPageChange(totalPages)} disabled={page === totalPages}>Последняя</SecondaryButton>
+    </div>
+  </div>
+);
+
+const compareTableValues = (left, right, direction = 'asc') => {
+  const safeLeft = left ?? '';
+  const safeRight = right ?? '';
+  const leftDate = Date.parse(safeLeft);
+  const rightDate = Date.parse(safeRight);
+
+  let result = 0;
+
+  if (!Number.isNaN(leftDate) && !Number.isNaN(rightDate)) {
+    result = leftDate - rightDate;
+  } else if (typeof safeLeft === 'number' || typeof safeRight === 'number') {
+    result = Number(safeLeft || 0) - Number(safeRight || 0);
+  } else {
+    result = String(safeLeft).localeCompare(String(safeRight), 'ru', { numeric: true, sensitivity: 'base' });
+  }
+
+  return direction === 'asc' ? result : -result;
+};
+
 export default function SupplierProfile() {
   const { bin } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -84,11 +134,26 @@ export default function SupplierProfile() {
     contracts,
     contract_units,
     acts,
+    complaints = [],
     rnu_entries,
     risk_indicators,
   } = profile;
 
   const riskAssessment = summary?.risk_assessment || {};
+  const requestedTab = searchParams.get('tab') || 'overview';
+  const directorEmployee =
+    subject_employees.find((employee) => {
+      const roleValue = String(employee.role ?? '').toLowerCase();
+      const sysRoleValue = String(employee.sys_role_id ?? '').toLowerCase();
+      const roleLabel = `${roleValue} ${sysRoleValue}`.toLowerCase();
+      return (
+        roleLabel.includes('руковод') ||
+        roleLabel.includes('директор') ||
+        roleLabel.includes('первый руковод')
+      );
+    }) ||
+    subject_employees.find((employee) => Number(employee.role) === 1) ||
+    null;
 
   const OverviewTab = () => (
     <div data-testid="overview-tab" className="space-y-6">
@@ -109,6 +174,11 @@ export default function SupplierProfile() {
           icon={<FileCheck className="w-5 h-5" strokeWidth={1.5} />}
         />
         <MetricCard
+          label="Жалобы"
+          value={summary.total_complaints || complaints.length}
+          icon={<MessageSquareWarning className="w-5 h-5" strokeWidth={1.5} />}
+        />
+        <MetricCard
           label="Сумма договоров"
           value={formatCurrency(summary.total_value)}
           icon={<TengeIcon className="w-5 h-5 text-slate-400" />}
@@ -124,7 +194,8 @@ export default function SupplierProfile() {
           </p>
           <p>
             В профиле найдено объявлений: <strong>{trd_buys.length}</strong>, заявок: <strong>{trd_apps.length}</strong>,
-            договоров: <strong>{contracts.length}</strong>, электронных актов: <strong>{acts.length}</strong>.
+            договоров: <strong>{contracts.length}</strong>, электронных актов: <strong>{acts.length}</strong>,
+            жалоб: <strong>{complaints.length}</strong>.
           </p>
           <p>
             Источник данных: <strong>{summary.data_source}</strong>.
@@ -179,6 +250,10 @@ export default function SupplierProfile() {
             <dd className="mt-1 text-slate-900">{(subject.oked_list || []).join(', ') || 'Не указано'}</dd>
           </div>
           <div>
+            <dt className="text-xs font-medium text-slate-500">Руководитель</dt>
+            <dd className="mt-1 text-slate-900">{directorEmployee?.fio || 'Не указано'}</dd>
+          </div>
+          <div>
             <dt className="text-xs font-medium text-slate-500">Роли</dt>
             <dd className="mt-1 flex flex-wrap gap-1">
               {company.roles.map((role, idx) => (
@@ -219,59 +294,394 @@ export default function SupplierProfile() {
     </div>
   );
 
-  const EmployeesTab = () => (
-    <div data-testid="employees-tab" className="space-y-6">
-      <InfoCard title={`Сотрудники (${subject_employees.length})`}>
-        <DataTable
-          columns={[
-            { header: 'ФИО', key: 'fio' },
-            { header: 'ИИН', key: 'iin', render: (row) => <span className="font-mono text-xs">{row.iin}</span> },
-            { header: 'Роль', key: 'role', render: (row) => getEmployeeRoleLabel(row.role) },
-            { header: 'Sys Role', key: 'sys_role_id' },
-            { header: 'Дата начала', key: 'start_date', render: (row) => formatDate(row.start_date) },
-            { header: 'Статус', key: 'disabled', render: (row) => (row.disabled ? 'Заблокирован' : 'Активен') },
-          ]}
-          data={subject_employees}
-        />
-      </InfoCard>
-    </div>
-  );
+  const AnnouncementsTab = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('publish_date');
+    const [sortDirection, setSortDirection] = useState('desc');
+    const PAGE_SIZE = 6;
+    const rows = trd_buys.map((announcement) => ({
+      ...announcement,
+      participant_count: trd_apps.filter((application) => application.buy_id === announcement.id).length,
+    }));
 
-  const AnnouncementsTab = () => (
-    <div data-testid="announcements-tab" className="space-y-6">
-      <InfoCard title={`Объявления (${trd_buys.length})`}>
-        <DataTable
-          columns={[
-            { header: '№ объявления', key: 'number_anno' },
-            { header: 'Наименование', key: 'name_ru' },
-            { header: 'Заказчик', key: 'customer_name_ru' },
-            { header: 'Способ', key: 'ref_trade_methods_id', render: (row) => getTradeMethodLabel(row.ref_trade_methods_id) },
-            { header: 'Сумма', key: 'total_sum', render: (row) => formatCurrency(row.total_sum) },
-            { header: 'Статус', key: 'ref_buy_status_id', render: (row) => getBuyStatusLabel(row.ref_buy_status_id) },
-          ]}
-          data={trd_buys}
-        />
-      </InfoCard>
-    </div>
-  );
+    const filteredRows = useMemo(() => {
+      const needle = searchQuery.trim().toLowerCase();
+      return rows.filter((row) => {
+        const matchesSearch =
+          !needle ||
+          row.number_anno.toLowerCase().includes(needle) ||
+          row.name_ru.toLowerCase().includes(needle);
+        const matchesStatus = statusFilter === 'all' || String(row.ref_buy_status_id) === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+    }, [rows, searchQuery, statusFilter]);
 
-  const ApplicationsTab = () => (
-    <div data-testid="applications-tab" className="space-y-6">
-      <InfoCard title={`Заявки поставщика (${trd_apps.length})`}>
-        <DataTable
-          columns={[
-            { header: 'ID заявки', key: 'id' },
-            { header: 'ID закупки', key: 'buy_id' },
-            { header: 'Протокол итогов', key: 'prot_number', render: (row) => row.prot_number || 'Не определен' },
-            { header: 'Дата подачи', key: 'date_apply', render: (row) => formatDateTime(row.date_apply) },
-            { header: 'Лотов', key: 'app_lots', render: (row) => row.app_lots.length },
-            { header: 'Сумма предложения', key: 'offered_sum', render: (row) => formatCurrency(getApplicationAmount(row)) },
-          ]}
-          data={trd_apps}
-        />
-      </InfoCard>
-    </div>
-  );
+    const sortedRows = useMemo(() => {
+      return [...filteredRows].sort((left, right) => compareTableValues(left[sortKey], right[sortKey], sortDirection));
+    }, [filteredRows, sortDirection, sortKey]);
+
+    const totalPages = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+    const pagedRows = sortedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    const handleSort = (key) => {
+      setPage(1);
+      setSortKey((currentKey) => {
+        if (currentKey === key) {
+          setSortDirection((currentDirection) => (currentDirection === 'asc' ? 'desc' : 'asc'));
+          return currentKey;
+        }
+        setSortDirection('asc');
+        return key;
+      });
+    };
+
+    useEffect(() => {
+      if (page > totalPages) setPage(totalPages);
+    }, [page, totalPages]);
+
+    return (
+      <div data-testid="announcements-tab" className="space-y-6">
+        <InfoCard title={`Объявления (${trd_buys.length})`}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_auto] gap-3">
+              <SearchInput
+                placeholder="Поиск по номеру и названию объявления..."
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setPage(1);
+                }}
+              />
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              >
+                <option value="all">Все статусы</option>
+                <option value="310">Опубликовано</option>
+                <option value="320">Прием заявок</option>
+                <option value="340">Итоги подведены</option>
+              </select>
+              <PrimaryButton onClick={() => { setSearchQuery(''); setStatusFilter('all'); setPage(1); }}>Сбросить</PrimaryButton>
+            </div>
+
+            <DataTable
+              columns={[
+                { header: 'Номер объявления', key: 'number_anno', sortable: true },
+                { header: 'Наименование закупки', key: 'name_ru', sortable: true },
+                { header: 'Заказчик', key: 'customer_name_ru', sortable: true },
+                { header: 'Способ закупки', key: 'ref_trade_methods_id', render: (row) => getTradeMethodLabel(row.ref_trade_methods_id) },
+                { header: 'Дата публикации', key: 'publish_date', sortable: true, render: (row) => formatDate(row.publish_date) },
+                { header: 'Срок подачи заявок', key: 'end_date', sortable: true, render: (row) => formatDate(row.end_date) },
+                { header: 'Сумма', key: 'total_sum', sortable: true, render: (row) => formatCurrency(row.total_sum) },
+                { header: 'Лоты', key: 'count_lots', sortable: true },
+                { header: 'Участники', key: 'participant_count', sortable: true },
+                {
+                  header: 'Статус',
+                  key: 'ref_buy_status_id',
+                  sortable: true,
+                  render: (row) => (
+                    <InlineStatusBadge
+                      label={getBuyStatusLabel(row.ref_buy_status_id)}
+                      tone={row.ref_buy_status_id === 340 ? 'emerald' : row.ref_buy_status_id === 320 ? 'amber' : 'blue'}
+                    />
+                  ),
+                },
+              ]}
+              data={pagedRows}
+              onRowClick={(row) => navigate(`/announcements/${row.id}`)}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </InfoCard>
+      </div>
+    );
+  };
+
+  const ApplicationsTab = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('date_apply');
+    const [sortDirection, setSortDirection] = useState('desc');
+    const PAGE_SIZE = 6;
+    const buyById = Object.fromEntries(trd_buys.map((announcement) => [announcement.id, announcement]));
+    const contractBuyIds = new Set(contracts.map((contract) => contract.trd_buy_id));
+    const rows = trd_apps.map((application) => {
+      const announcement = buyById[application.buy_id];
+      const isWinner = contractBuyIds.has(application.buy_id);
+      const status = isWinner ? 'Победила' : announcement?.ref_buy_status_id === 320 ? 'Подана' : 'Отклонена';
+      return {
+        ...application,
+        bid_number: application.prot_number || `Заявка по объявлению ${announcement?.number_anno || application.buy_id}`,
+        announcement_number: announcement?.number_anno || 'Не указано',
+        supplier_name: company.name_ru,
+        offered_amount: getApplicationAmount(application),
+        status,
+        place: isWinner ? 1 : null,
+        result: isWinner ? 'Победитель' : status === 'Подана' ? 'На рассмотрении' : 'Проиграл',
+      };
+    });
+
+    const filteredRows = useMemo(() => {
+      const needle = searchQuery.trim().toLowerCase();
+      return rows.filter((row) => {
+        const matchesSearch =
+          !needle ||
+          row.bid_number.toLowerCase().includes(needle) ||
+          row.announcement_number.toLowerCase().includes(needle) ||
+          row.supplier_name.toLowerCase().includes(needle);
+        const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
+        const matchesDate = !dateFrom || (row.date_apply && new Date(row.date_apply) >= new Date(dateFrom));
+        return matchesSearch && matchesStatus && matchesDate;
+      });
+    }, [rows, searchQuery, statusFilter, dateFrom]);
+
+    const sortedRows = useMemo(() => {
+      return [...filteredRows].sort((left, right) => compareTableValues(left[sortKey], right[sortKey], sortDirection));
+    }, [filteredRows, sortDirection, sortKey]);
+
+    const totalPages = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+    const pagedRows = sortedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    const handleSort = (key) => {
+      setPage(1);
+      setSortKey((currentKey) => {
+        if (currentKey === key) {
+          setSortDirection((currentDirection) => (currentDirection === 'asc' ? 'desc' : 'asc'));
+          return currentKey;
+        }
+        setSortDirection('asc');
+        return key;
+      });
+    };
+
+    useEffect(() => {
+      if (page > totalPages) setPage(totalPages);
+    }, [page, totalPages]);
+
+    return (
+      <div data-testid="applications-tab" className="space-y-6">
+        <InfoCard title={`Заявки (${trd_apps.length})`}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_auto] gap-3">
+              <SearchInput
+                placeholder="Поиск по номеру заявки, объявлению или поставщику..."
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setPage(1);
+                }}
+              />
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              >
+                <option value="all">Все статусы</option>
+                <option value="Подана">Подана</option>
+                <option value="Отклонена">Отклонена</option>
+                <option value="Победила">Победила</option>
+              </select>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  setDateFrom(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              />
+              <PrimaryButton onClick={() => { setSearchQuery(''); setStatusFilter('all'); setDateFrom(''); setPage(1); }}>Сбросить</PrimaryButton>
+            </div>
+
+            <DataTable
+              columns={[
+                { header: 'Номер заявки', key: 'bid_number', sortable: true },
+                { header: 'Объявление', key: 'announcement_number', sortable: true },
+                { header: 'Поставщик', key: 'supplier_name', sortable: true },
+                { header: 'Цена предложения', key: 'offered_amount', sortable: true, render: (row) => formatCurrency(row.offered_amount) },
+                { header: 'Дата подачи', key: 'date_apply', sortable: true, render: (row) => formatDateTime(row.date_apply) },
+                {
+                  header: 'Статус',
+                  key: 'status',
+                  sortable: true,
+                  render: (row) => (
+                    <InlineStatusBadge
+                      label={row.status}
+                      tone={row.status === 'Победила' ? 'emerald' : row.status === 'Подана' ? 'amber' : 'red'}
+                    />
+                  ),
+                },
+                { header: 'Место', key: 'place', sortable: true, render: (row) => row.place || '—' },
+                { header: 'Итог', key: 'result', sortable: true },
+              ]}
+              data={pagedRows}
+              onRowClick={(row) => navigate(`/bids/${encodeURIComponent(row.id)}`)}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </InfoCard>
+      </div>
+    );
+  };
+
+  const LotsTab = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('amount_value');
+    const [sortDirection, setSortDirection] = useState('desc');
+    const PAGE_SIZE = 6;
+    const buyById = Object.fromEntries(trd_buys.map((announcement) => [announcement.id, announcement]));
+    const contractByBuyId = Object.fromEntries(contracts.map((contract) => [contract.trd_buy_id, contract]));
+    const contractUnitByLotId = Object.fromEntries(contract_units.map((unit) => [unit.lot_id, unit]));
+    const rows = trd_apps.flatMap((application) =>
+      application.app_lots.map((lot) => {
+        const announcement = buyById[application.buy_id];
+        const contract = contractByBuyId[application.buy_id];
+        const unit = contractUnitByLotId[lot.lot_id];
+        return {
+          ...lot,
+          announcement_number: announcement?.number_anno || 'Не указано',
+          category: 'Не указано',
+          amount_value: Number(unit?.total_sum_wnds || lot.amount || 0),
+          winner_name: contract ? company.name_ru : 'Не определен',
+          contract_number: contract?.contract_number || 'Нет договора',
+          status_label: getLotStatusLabel(lot.ref_lot_status_id),
+        };
+      })
+    );
+
+    const filteredRows = useMemo(() => {
+      const needle = searchQuery.trim().toLowerCase();
+      return rows.filter((row) => {
+        const matchesSearch =
+          !needle ||
+          row.lot_number.toLowerCase().includes(needle) ||
+          row.name_ru.toLowerCase().includes(needle) ||
+          row.announcement_number.toLowerCase().includes(needle);
+        const matchesStatus = statusFilter === 'all' || String(row.ref_lot_status_id) === statusFilter;
+        const matchesCategory = categoryFilter === 'all' || row.category === categoryFilter;
+        return matchesSearch && matchesStatus && matchesCategory;
+      });
+    }, [rows, searchQuery, statusFilter, categoryFilter]);
+
+    const sortedRows = useMemo(() => {
+      return [...filteredRows].sort((left, right) => compareTableValues(left[sortKey], right[sortKey], sortDirection));
+    }, [filteredRows, sortDirection, sortKey]);
+
+    const totalPages = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+    const pagedRows = sortedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    const handleSort = (key) => {
+      setPage(1);
+      setSortKey((currentKey) => {
+        if (currentKey === key) {
+          setSortDirection((currentDirection) => (currentDirection === 'asc' ? 'desc' : 'asc'));
+          return currentKey;
+        }
+        setSortDirection('asc');
+        return key;
+      });
+    };
+
+    useEffect(() => {
+      if (page > totalPages) setPage(totalPages);
+    }, [page, totalPages]);
+
+    return (
+      <div data-testid="lots-tab" className="space-y-6">
+        <InfoCard title={`Лоты (${rows.length})`}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_auto] gap-3">
+              <SearchInput
+                placeholder="Поиск по номеру лота, объявлению или наименованию..."
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setPage(1);
+                }}
+              />
+              <select
+                value={categoryFilter}
+                onChange={(event) => {
+                  setCategoryFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              >
+                <option value="all">Все категории</option>
+                <option value="Не указано">Не указано</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              >
+                <option value="all">Все статусы</option>
+                <option value="310">Прием заявок</option>
+                <option value="320">Итоги подведены</option>
+              </select>
+              <PrimaryButton onClick={() => { setSearchQuery(''); setCategoryFilter('all'); setStatusFilter('all'); setPage(1); }}>Сбросить</PrimaryButton>
+            </div>
+
+            <DataTable
+              columns={[
+                { header: 'Номер лота', key: 'lot_number', sortable: true },
+                { header: 'Объявление', key: 'announcement_number', sortable: true },
+                { header: 'Наименование', key: 'name_ru', sortable: true },
+                { header: 'Категория', key: 'category', sortable: true },
+                { header: 'Сумма', key: 'amount_value', sortable: true, render: (row) => formatCurrency(row.amount_value) },
+                { header: 'Количество', key: 'quantity', sortable: true },
+                {
+                  header: 'Статус',
+                  key: 'status_label',
+                  sortable: true,
+                  render: (row) => (
+                    <InlineStatusBadge
+                      label={row.status_label}
+                      tone={row.ref_lot_status_id === 320 ? 'emerald' : 'amber'}
+                    />
+                  ),
+                },
+                { header: 'Связанный договор', key: 'contract_number', sortable: true },
+                { header: 'Победитель', key: 'winner_name', sortable: true },
+              ]}
+              data={pagedRows}
+              onRowClick={(row) => navigate(`/lots/${row.lot_id}`)}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </InfoCard>
+      </div>
+    );
+  };
 
   const ContractsTab = () => (
     <div data-testid="contracts-tab" className="space-y-6">
@@ -282,24 +692,28 @@ export default function SupplierProfile() {
             { header: 'Номер договора', key: 'contract_number' },
             { header: 'Объявление', key: 'trd_buy_number_anno' },
             { header: 'Заказчик', key: 'customer_name_ru' },
+            { header: 'Дата заключения', key: 'crdate', render: (row) => formatDate(row.crdate) },
             { header: 'Сумма', key: 'contract_sum_wnds', render: (row) => formatCurrency(row.contract_sum_wnds || row.contract_sum) },
             { header: 'Статус', key: 'ref_contract_status_id', render: (row) => getContractStatusLabel(row.ref_contract_status_id) },
+            {
+              header: 'Подробнее',
+              key: 'details',
+              render: (row) => (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigate(`/contracts/${row.id}`);
+                  }}
+                  className="inline-flex items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Подробнее
+                </button>
+              ),
+            },
           ]}
           data={contracts}
-        />
-      </InfoCard>
-
-      <InfoCard title={`Предметы договора (${contract_units.length})`}>
-        <DataTable
-          columns={[
-            { header: 'ID договора', key: 'contract_id' },
-            { header: 'Предмет', key: 'name_ru', render: (row) => row.name_ru || 'Не указано' },
-            { header: 'Количество', key: 'quantity' },
-            { header: 'Сумма', key: 'total_sum_wnds', render: (row) => formatCurrency(row.total_sum_wnds) },
-            { header: 'Факт оплаты', key: 'fact_sum_wnds', render: (row) => formatCurrency(row.fact_sum_wnds) },
-            { header: 'Казсодержание', key: 'ks_proc', render: (row) => `${row.ks_proc}%` },
-          ]}
-          data={contract_units}
+          onRowClick={(row) => navigate(`/contracts/${row.id}`)}
         />
       </InfoCard>
     </div>
@@ -353,6 +767,43 @@ export default function SupplierProfile() {
               </SectionCard>
             ))}
           </div>
+        )}
+      </InfoCard>
+    </div>
+  );
+
+  const ComplaintsTab = () => (
+    <div data-testid="complaints-tab" className="space-y-6">
+      <InfoCard title={`Жалобы (${complaints.length})`}>
+        {complaints.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-full mb-3">
+              <MessageSquareWarning className="w-6 h-6 text-emerald-600" strokeWidth={1.5} />
+            </div>
+            <p className="text-slate-900 font-medium">Связанных жалоб не найдено</p>
+            <p className="text-sm text-slate-500 mt-2">По текущему участнику в локальной базе нет зарегистрированных обращений.</p>
+          </div>
+        ) : (
+          <DataTable
+            columns={[
+              { header: 'Номер жалобы', key: 'complaint_number' },
+              { header: 'Дата', key: 'date', render: (row) => formatDateTime(row.date) },
+              { header: 'Статус', key: 'status', render: (row) => <ComplaintStatusBadge status={row.status} /> },
+              { header: 'Предмет', key: 'subject' },
+              { header: 'Решение', key: 'decision', render: (row) => row.decision || 'Решение не опубликовано' },
+              {
+                header: 'Связь',
+                key: 'related_tender_id',
+                render: (row) => (
+                  <div className="text-xs text-slate-600 space-y-1">
+                    <p>Тендер: {row.related_tender_id || '—'}</p>
+                    <p>Договор: {row.related_contract_id || '—'}</p>
+                  </div>
+                ),
+              },
+            ]}
+            data={complaints}
+          />
         )}
       </InfoCard>
     </div>
@@ -418,6 +869,14 @@ export default function SupplierProfile() {
               </p>
             </SectionCard>
             <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Подтвержденные жалобы</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.satisfied_complaints ?? 0}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
+              <p className="text-xs text-slate-500 mb-1">Жалобы по договору</p>
+              <p className="text-lg font-semibold text-slate-900">{riskAssessment.contract_related_complaints ?? 0}</p>
+            </SectionCard>
+            <SectionCard className="p-4">
               <p className="text-xs text-slate-500 mb-1">Суммарная просрочка</p>
               <p className="text-lg font-semibold text-slate-900">{riskAssessment.overdue_days ?? 0} дн.</p>
             </SectionCard>
@@ -476,11 +935,12 @@ export default function SupplierProfile() {
     { value: 'overview', label: 'Обзор', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <OverviewTab /> },
     { value: 'subject', label: 'Участник', icon: <Building2 className="w-4 h-4" strokeWidth={1.5} />, content: <SubjectTab /> },
     { value: 'addresses', label: 'Адреса', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} />, content: <AddressesTab /> },
-    { value: 'employees', label: 'Сотрудники', icon: <Users className="w-4 h-4" strokeWidth={1.5} />, content: <EmployeesTab /> },
     { value: 'announcements', label: 'Объявления', icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, content: <AnnouncementsTab /> },
     { value: 'applications', label: 'Заявки', icon: <Receipt className="w-4 h-4" strokeWidth={1.5} />, content: <ApplicationsTab /> },
+    { value: 'lots', label: 'Лоты', icon: <Receipt className="w-4 h-4" strokeWidth={1.5} />, content: <LotsTab /> },
     { value: 'contracts', label: 'Договоры', icon: <FileCheck className="w-4 h-4" strokeWidth={1.5} />, content: <ContractsTab /> },
     { value: 'acts', label: 'Акты', icon: <FileCheck className="w-4 h-4" strokeWidth={1.5} />, content: <ActsTab /> },
+    { value: 'complaints', label: 'Жалобы', icon: <MessageSquareWarning className="w-4 h-4" strokeWidth={1.5} />, content: <ComplaintsTab /> },
     { value: 'rnu', label: 'РНУ', icon: <ShieldAlert className="w-4 h-4" strokeWidth={1.5} />, content: <RnuTab /> },
     { value: 'risk', label: 'Риск-анализ', icon: <TrendingUp className="w-4 h-4" strokeWidth={1.5} />, content: <RiskTab /> },
   ];
@@ -528,7 +988,7 @@ export default function SupplierProfile() {
           </div>
         </div>
 
-        <ContentSwitcher tabs={tabs} defaultTab="overview" />
+        <ContentSwitcher tabs={tabs} defaultTab={requestedTab} />
       </div>
     </PageContainer>
   );

@@ -69,3 +69,54 @@ export const RegistryBadge = ({ isBlacklisted, className }) => {
     </Badge>
   );
 };
+
+export const ContractStatusBadge = ({ status, bucket, className }) => {
+  const normalizedBucket =
+    bucket ||
+    (String(status || '').toLowerCase().includes('расторг')
+      ? 'terminated'
+      : String(status || '').toLowerCase().includes('исполн')
+      ? 'completed'
+      : 'in_progress');
+
+  const config = {
+    completed: { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: status || 'Исполнен' },
+    in_progress: { color: 'bg-amber-100 text-amber-700 border-amber-200', label: status || 'В процессе' },
+    terminated: { color: 'bg-red-100 text-red-700 border-red-200', label: status || 'Расторгнут' },
+  }[normalizedBucket] || {
+    color: 'bg-slate-100 text-slate-700 border-slate-200',
+    label: status || 'Неизвестно',
+  };
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn('text-xs font-medium border', config.color, className)}
+    >
+      {config.label}
+    </Badge>
+  );
+};
+
+export const ComplaintStatusBadge = ({ status, className }) => {
+  const normalized = String(status || '').toLowerCase();
+  const config =
+    normalized.includes('удовлетвор')
+      ? { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: status }
+      : normalized.includes('отклон') || normalized.includes('отказ')
+      ? { color: 'bg-red-100 text-red-700 border-red-200', label: status }
+      : normalized.includes('рассмотр')
+      ? { color: 'bg-amber-100 text-amber-700 border-amber-200', label: status }
+      : normalized.includes('подан')
+      ? { color: 'bg-blue-100 text-blue-700 border-blue-200', label: status }
+      : { color: 'bg-slate-100 text-slate-700 border-slate-200', label: status || 'Статус не указан' };
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn('text-xs font-medium border', config.color, className)}
+    >
+      {config.label}
+    </Badge>
+  );
+};

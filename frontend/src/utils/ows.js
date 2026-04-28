@@ -87,3 +87,12 @@ export const getEmployeeRoleLabel = (value) => {
 export const getApplicationAmount = (application) => {
   return (application.app_lots || []).reduce((sum, lot) => sum + Number(lot.amount || 0), 0);
 };
+
+export const getLotStatusLabel = (value) => {
+  const labels = {
+    310: 'Прием заявок',
+    320: 'Итоги подведены',
+  };
+
+  return labels[value] || `Статус #${value || '-'}`;
+};

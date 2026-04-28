@@ -100,6 +100,131 @@ class DashboardStats(BaseModel):
     average_trust_score: int
 
 
+class ContractRegistryItem(BaseModel):
+    id: int
+    contract_number: str
+    contract_number_sys: str
+    contract_date: Optional[str] = None
+    supplier_name: str
+    supplier_biin: str
+    customer_name: str
+    customer_bin: str
+    amount: float
+    status: str
+    status_bucket: str
+    procurement_method: str
+    tender_number: Optional[str] = None
+    tender_id: Optional[int] = None
+
+
+class ContractRegistryResponse(BaseModel):
+    items: List[ContractRegistryItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class ContractTimelineEvent(BaseModel):
+    date: Optional[str] = None
+    title: str
+    description: str
+    event_type: str
+
+
+class ContractPartyInfo(BaseModel):
+    name: str
+    bin: Optional[str] = None
+    region: Optional[str] = None
+    address: Optional[str] = None
+    status: Optional[str] = None
+
+
+class ContractDetail(BaseModel):
+    item: ContractRegistryItem
+    contract: "ContractRecord"
+    tender: Optional["TrdBuyRecord"] = None
+    units: List["ContractUnitRecord"]
+    acts: List["ActRecord"]
+    history: List[ContractTimelineEvent]
+    execution_status: Dict[str, Any]
+    supplier_party: Optional[ContractPartyInfo] = None
+    customer_party: Optional[ContractPartyInfo] = None
+
+
+class ComplaintRegistryItem(BaseModel):
+    id: str
+    complaint_number: str
+    date_submitted: Optional[str] = None
+    applicant_name: str
+    applicant_identifier: Optional[str] = None
+    supplier_name: Optional[str] = None
+    customer_name: Optional[str] = None
+    object_type: str
+    object_name: str
+    status: str
+    short_description: str
+    full_text: Optional[str] = None
+    tender_number: Optional[str] = None
+    related_tender_id: Optional[int] = None
+    related_contract_id: Optional[int] = None
+    decision: Optional[str] = None
+    supplier_biin: Optional[str] = None
+
+
+class ComplaintRegistryResponse(BaseModel):
+    items: List[ComplaintRegistryItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class ComplaintDetail(BaseModel):
+    item: ComplaintRegistryItem
+
+
+class AnnouncementLotItem(BaseModel):
+    lot_number: str
+    lot_id: int
+    name_ru: str
+    quantity: float
+    amount: float
+    status: str
+    contract_number: Optional[str] = None
+    winner_name: Optional[str] = None
+
+
+class AnnouncementBidItem(BaseModel):
+    application_id: str
+    bid_number: str
+    buy_id: int
+    supplier_name: str
+    supplier_bin: str
+    offered_amount: float
+    date_apply: Optional[str] = None
+    status: str
+    place: Optional[int] = None
+    result: Optional[str] = None
+
+
+class AnnouncementDetail(BaseModel):
+    announcement: TrdBuyRecord
+    lots: List[AnnouncementLotItem]
+    bids: List[AnnouncementBidItem]
+
+
+class BidDetail(BaseModel):
+    bid: AnnouncementBidItem
+    announcement: Optional[TrdBuyRecord] = None
+    supplier: Optional[Company] = None
+    lots: List[AnnouncementLotItem]
+
+
+class LotDetail(BaseModel):
+    lot: AnnouncementLotItem
+    announcement: Optional[TrdBuyRecord] = None
+    bids: List[AnnouncementBidItem]
+
+
 class SubjectRecord(BaseModel):
     model_config = ConfigDict(extra="ignore")
     pid: int
@@ -325,6 +450,25 @@ class ActRecord(BaseModel):
     index_date: Optional[str] = None
 
 
+class ComplaintRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    complaint_number: str
+    date: Optional[str] = None
+    applicant_name: str
+    applicant_bin: Optional[str] = None
+    supplier_id: Optional[int] = None
+    supplier_bin: Optional[str] = None
+    supplier_name: Optional[str] = None
+    customer_name: Optional[str] = None
+    related_tender_id: Optional[int] = None
+    related_contract_id: Optional[int] = None
+    subject: str
+    description: str
+    status: str
+    decision: Optional[str] = None
+
+
 class RiskIndicator(BaseModel):
     category: str
     level: str
@@ -343,8 +487,12 @@ class SupplierProfile(BaseModel):
     contracts: List[ContractRecord]
     contract_units: List[ContractUnitRecord]
     acts: List[ActRecord]
+    complaints: List[ComplaintRecord]
     rnu_entries: List[RnuEntry]
     risk_indicators: List[RiskIndicator]
+
+
+ContractDetail.model_rebuild()
 
 
 def goszakup_enabled() -> bool:
@@ -485,6 +633,29 @@ def get_trade_method_name(method_id: int) -> str:
     return LOCAL_TRADE_METHOD_LABELS.get(method_id, f"Способ #{method_id}")
 
 
+def get_contract_status_bucket(contract: ContractRecord) -> str:
+    if is_terminated_contract(contract):
+        return "terminated"
+    if is_completed_contract(contract):
+        return "completed"
+    return "in_progress"
+
+
+def map_contract_bucket_to_label(bucket: str) -> str:
+    return {
+        "completed": "Исполнен",
+        "in_progress": "В процессе",
+        "terminated": "Расторгнут",
+    }.get(bucket, "Неизвестно")
+
+
+def get_lot_status_label(status_id: int) -> str:
+    return {
+        310: "Прием заявок",
+        320: "Итоги подведены",
+    }.get(int(status_id or 0), f"Статус #{status_id or '-'}")
+
+
 def is_active_rnu_entry(entry: RnuEntry) -> bool:
     end_date = parse_isoish_datetime(entry.end_date)
     return end_date is None or end_date >= datetime.now()
@@ -502,17 +673,42 @@ def is_overdue_act(act: ActRecord) -> bool:
     return (act.day_overdue or 0) > 0 or (act.sum_fine or 0) > 0
 
 
+def complaint_status_bucket(complaint: ComplaintRecord) -> str:
+    normalized = complaint.status.lower()
+    if "удовлетвор" in normalized:
+        return "satisfied"
+    if "отклон" in normalized or "отказ" in normalized:
+        return "rejected"
+    return "pending"
+
+
+def is_contract_related_complaint(complaint: ComplaintRecord) -> bool:
+    haystack = " ".join(
+        [
+            complaint.subject or "",
+            complaint.description or "",
+            complaint.decision or "",
+        ]
+    ).lower()
+    return bool(complaint.related_contract_id) or any(marker in haystack for marker in ("договор", "исполн", "акт", "поставка", "срок"))
+
+
 def compute_company_assessment(
     subject_data: Dict[str, Any],
     applications: List[TrdAppRecord],
     contracts: List[ContractRecord],
     acts: List[ActRecord],
-    rnu_entries: List[RnuEntry]
+    rnu_entries: List[RnuEntry],
+    complaints: Optional[List[ComplaintRecord]] = None,
 ) -> Dict[str, Any]:
+    complaints = complaints or []
     active_rnu_entries = [entry for entry in rnu_entries if is_active_rnu_entry(entry)]
     terminated_contracts = [contract for contract in contracts if is_terminated_contract(contract)]
     completed_contracts = [contract for contract in contracts if is_completed_contract(contract)]
     overdue_acts = [act for act in acts if is_overdue_act(act)]
+    satisfied_complaints = [complaint for complaint in complaints if complaint_status_bucket(complaint) == "satisfied"]
+    pending_complaints = [complaint for complaint in complaints if complaint_status_bucket(complaint) == "pending"]
+    contract_related_complaints = [complaint for complaint in complaints if is_contract_related_complaint(complaint)]
 
     total_announcements = max(len(applications), len({application.buy_id for application in applications if application.buy_id}))
     total_contracts = len(contracts)
@@ -521,6 +717,10 @@ def compute_company_assessment(
     terminated_contracts_count = len(terminated_contracts)
     active_rnu_count = len(active_rnu_entries)
     overdue_acts_count = len(overdue_acts)
+    total_complaints = len(complaints)
+    satisfied_complaints_count = len(satisfied_complaints)
+    pending_complaints_count = len(pending_complaints)
+    contract_related_complaints_count = len(contract_related_complaints)
 
     total_contract_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
     total_overdue_days = sum(max(0, int(act.day_overdue or 0)) for act in overdue_acts)
@@ -551,6 +751,9 @@ def compute_company_assessment(
     negative_points += min(16.0, overdue_acts_count * 6.0)
     negative_points += min(10.0, total_overdue_days / 3.0)
     negative_points += min(8.0, total_fine_sum / 50_000.0)
+    negative_points += min(18.0, satisfied_complaints_count * 9.0)
+    negative_points += min(8.0, pending_complaints_count * 2.5)
+    negative_points += min(10.0, contract_related_complaints_count * 5.0)
 
     if total_contracts == 0:
         negative_points += 10.0
@@ -559,9 +762,21 @@ def compute_company_assessment(
 
     trust_score = round(max(5.0, min(95.0, 58.0 + positive_points - negative_points)))
 
-    if active_rnu_count > 0 or terminated_contracts_count >= 2 or overdue_acts_count >= 2 or trust_score < 45:
+    if (
+        active_rnu_count > 0
+        or terminated_contracts_count >= 2
+        or overdue_acts_count >= 2
+        or satisfied_complaints_count >= 2
+        or trust_score < 45
+    ):
         risk_level = "high"
-    elif terminated_contracts_count == 1 or overdue_acts_count == 1 or trust_score < 75:
+    elif (
+        terminated_contracts_count == 1
+        or overdue_acts_count == 1
+        or satisfied_complaints_count == 1
+        or pending_complaints_count > 0
+        or trust_score < 75
+    ):
         risk_level = "medium"
     else:
         risk_level = "low"
@@ -606,6 +821,45 @@ def compute_company_assessment(
         risk_factors.append(
             f"Актов с просрочкой или штрафами: {overdue_acts_count}, суммарная просрочка: {total_overdue_days} дн., штрафы: {round(total_fine_sum, 2)} ₸."
         )
+
+    if satisfied_complaints_count > 0:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Жалобы",
+                level="high" if satisfied_complaints_count >= 2 else "medium",
+                description=(
+                    f"Подтвержденных жалоб по участнику: {satisfied_complaints_count}. "
+                    f"Из них связанных с исполнением договора: {contract_related_complaints_count}."
+                ),
+                impact="Высокий" if satisfied_complaints_count >= 2 or contract_related_complaints_count > 0 else "Средний",
+            )
+        )
+        risk_factors.append(f"Есть удовлетворённые жалобы по участнику: {satisfied_complaints_count}.")
+        if contract_related_complaints_count > 0:
+            risk_factors.append(f"Есть жалоба, связанная с исполнением договора: {contract_related_complaints_count}.")
+    elif total_complaints > 0:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Жалобы",
+                level="low",
+                description=(
+                    f"Жалоб в профиле: {total_complaints}. Подтвержденных нарушений не найдено, "
+                    f"отклоненные или неподтвержденные обращения не усиливают риск."
+                ),
+                impact="Низкий",
+            )
+        )
+        risk_factors.append("Жалобы отсутствуют или не подтверждены как нарушение.")
+    else:
+        risk_indicators.append(
+            RiskIndicator(
+                category="Жалобы",
+                level="low",
+                description="Жалобы по участнику в локальной базе не найдены.",
+                impact="Низкий",
+            )
+        )
+        risk_factors.append("Жалобы отсутствуют или не подтверждены.")
 
     history_level = "low"
     history_impact = "Низкий"
@@ -677,6 +931,10 @@ def compute_company_assessment(
             "overdue_acts": overdue_acts_count,
             "overdue_days": total_overdue_days,
             "fine_sum": round(total_fine_sum, 2),
+            "total_complaints": total_complaints,
+            "satisfied_complaints": satisfied_complaints_count,
+            "pending_complaints": pending_complaints_count,
+            "contract_related_complaints": contract_related_complaints_count,
             "applications": applications_count,
             "total_announcements": total_announcements,
             "completed_contracts": completed_contracts_count,
@@ -792,6 +1050,26 @@ def map_application_to_record(application: Dict[str, Any]) -> TrdAppRecord:
     )
 
 
+def map_complaint_to_record(raw: Dict[str, Any]) -> ComplaintRecord:
+    return ComplaintRecord(
+        id=str(raw.get("id") or uuid.uuid4()),
+        complaint_number=str(raw.get("complaint_number") or raw.get("number") or raw.get("id") or ""),
+        date=raw.get("date") or raw.get("date_submitted") or raw.get("created_at") or raw.get("crdate"),
+        applicant_name=raw.get("applicant_name") or raw.get("supplier_name") or raw.get("supplier_name_ru") or "Не указан",
+        applicant_bin=raw.get("applicant_bin") or raw.get("applicant_identifier") or raw.get("supplier_bin") or raw.get("supplier_biin"),
+        supplier_id=raw.get("supplier_id"),
+        supplier_bin=raw.get("supplier_bin") or raw.get("supplier_biin"),
+        supplier_name=raw.get("supplier_name") or raw.get("supplier_name_ru"),
+        customer_name=raw.get("customer_name") or raw.get("customer_name_ru"),
+        related_tender_id=raw.get("related_tender_id") or raw.get("tender_id") or raw.get("trd_buy_id"),
+        related_contract_id=raw.get("related_contract_id") or raw.get("contract_id"),
+        subject=raw.get("subject") or raw.get("short_description") or "Жалоба",
+        description=raw.get("description") or raw.get("full_text") or raw.get("subject") or "Описание не указано",
+        status=raw.get("status") or "Статус не указан",
+        decision=raw.get("decision"),
+    )
+
+
 async def goszakup_get(
     path: str,
     params: Optional[Dict[str, Any]] = None,
@@ -887,7 +1165,7 @@ async def search_goszakup_companies(query: str) -> List[Company]:
     for subject in subject_items:
         bin_value = str(subject.get("bin") or subject.get("iin") or "")
         rnu_entries = [map_rnu_to_entry(item) for item in rnu_by_bin.get(bin_value, [])]
-        assessment = compute_company_assessment(subject, [], [], [], rnu_entries)
+        assessment = compute_company_assessment(subject, [], [], [], rnu_entries, [])
         companies.append(assessment["company"])
 
     return companies
@@ -927,7 +1205,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
     contract_units: List[ContractUnitRecord] = []
     acts: List[ActRecord] = []
 
-    assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
+    assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, [])
     company = assessment["company"]
 
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
@@ -940,6 +1218,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         "total_announcements": len(trd_buys),
         "total_applications": len(trd_apps),
         "total_acts": len(acts),
+        "total_complaints": 0,
         "total_value": total_value,
         "active_contracts": max(0, len(contracts) - completed_contracts),
         "completed_contracts": completed_contracts,
@@ -960,6 +1239,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         contracts=contracts,
         contract_units=contract_units,
         acts=acts,
+        complaints=[],
         rnu_entries=rnu_entries,
         risk_indicators=assessment["risk_indicators"]
     )
@@ -1010,6 +1290,19 @@ async def ensure_local_supplier_profiles_seeded():
         logger.info("Seeded %s local supplier profiles in OWS-like format", len(prepared_profiles))
 
 
+def read_local_supplier_profiles_seed() -> List[Dict[str, Any]]:
+    with LOCAL_SUPPLIER_PROFILES_PATH.open("r", encoding="utf-8") as seed_file:
+        return json.load(seed_file)
+
+
+async def get_local_profiles_snapshot() -> List[Dict[str, Any]]:
+    documents = await db.supplier_profiles.find({}, {"_id": 0, "search_text": 0}).to_list(length=None)
+    if documents:
+        return documents
+    logger.warning("Mongo collection supplier_profiles is empty, fallback to local seed file")
+    return read_local_supplier_profiles_seed()
+
+
 async def search_local_companies(query: str) -> List[Company]:
     normalized_query = query.strip()
     if not normalized_query:
@@ -1027,7 +1320,7 @@ async def search_local_companies(query: str) -> List[Company]:
 
     cursor = db.supplier_profiles.find(
         search_filter,
-        {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1}
+        {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1}
     ).limit(SEARCH_RESULT_LIMIT)
     companies: List[Company] = []
     async for item in cursor:
@@ -1037,7 +1330,8 @@ async def search_local_companies(query: str) -> List[Company]:
             contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
             acts = [ActRecord(**act) for act in item.get("acts", [])]
             rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
-            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
+            complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
+            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
             companies.append(assessment["company"])
 
     return companies
@@ -1070,7 +1364,7 @@ async def list_local_companies(
 
     cursor = (
         db.supplier_profiles
-        .find(mongo_filter, {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1})
+        .find(mongo_filter, {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1})
         .sort("subject.name_ru", 1)
         .limit(limit)
     )
@@ -1083,7 +1377,8 @@ async def list_local_companies(
             contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
             acts = [ActRecord(**act) for act in item.get("acts", [])]
             rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
-            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries)
+            complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
+            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
             company = assessment["company"]
             if risk_level and company.risk_level != risk_level:
                 continue
@@ -1097,6 +1392,9 @@ async def list_local_companies(
 async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile]:
     profile = await db.supplier_profiles.find_one({"subject.bin": str(bin_value)}, {"_id": 0, "search_text": 0})
     if not profile:
+        seed_profiles = read_local_supplier_profiles_seed()
+        profile = next((item for item in seed_profiles if str(item.get("subject", {}).get("bin")) == str(bin_value)), None)
+    if not profile:
         return None
     subject = SubjectRecord(**profile.get("subject", {}))
     subject_addresses = [SubjectAddress(**item) for item in profile.get("subject_addresses", [])]
@@ -1106,9 +1404,10 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
     contracts = [ContractRecord(**item) for item in profile.get("contracts", [])]
     contract_units = [ContractUnitRecord(**item) for item in profile.get("contract_units", [])]
     acts = [ActRecord(**item) for item in profile.get("acts", [])]
+    complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
     rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
 
-    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries)
+    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries, complaints)
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
     regdate = parse_isoish_datetime(subject.regdate) or parse_isoish_datetime(subject.crdate)
@@ -1119,6 +1418,7 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         "total_announcements": len(trd_buys),
         "total_applications": len(trd_apps),
         "total_acts": len(acts),
+        "total_complaints": len(complaints),
         "total_value": total_value,
         "active_contracts": max(0, len(contracts) - completed_contracts),
         "completed_contracts": completed_contracts,
@@ -1138,6 +1438,7 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         contracts=contracts,
         contract_units=contract_units,
         acts=acts,
+        complaints=complaints,
         rnu_entries=rnu_entries,
         risk_indicators=assessment["risk_indicators"],
     )
@@ -1146,7 +1447,7 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
 async def get_local_dashboard_stats() -> DashboardStats:
     cursor = db.supplier_profiles.find(
         {},
-        {"_id": 0, "subject": 1, "trd_buys": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "rnu_entries": 1}
+        {"_id": 0, "subject": 1, "trd_buys": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1}
     )
 
     total_companies = 0
@@ -1163,7 +1464,8 @@ async def get_local_dashboard_stats() -> DashboardStats:
         contracts = [ContractRecord(**contract) for contract in item.get("contracts", [])]
         acts = [ActRecord(**act) for act in item.get("acts", [])]
         rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
-        assessment = compute_company_assessment(item.get("subject", {}), trd_apps, contracts, acts, rnu_entries)
+        complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
+        assessment = compute_company_assessment(item.get("subject", {}), trd_apps, contracts, acts, rnu_entries, complaints)
         company = assessment["company"]
 
         total_announcements += len(trd_buys)
@@ -1182,6 +1484,620 @@ async def get_local_dashboard_stats() -> DashboardStats:
         total_contract_value=round(total_contract_value, 2),
         average_trust_score=average_trust_score,
     )
+
+
+def build_contract_registry_item(
+    contract: ContractRecord,
+    supplier_name: str,
+    tender: Optional[TrdBuyRecord] = None,
+) -> ContractRegistryItem:
+    status_bucket = get_contract_status_bucket(contract)
+    return ContractRegistryItem(
+        id=contract.id,
+        contract_number=contract.contract_number,
+        contract_number_sys=contract.contract_number_sys,
+        contract_date=contract.crdate,
+        supplier_name=supplier_name or "Не указан",
+        supplier_biin=contract.supplier_biin,
+        customer_name=contract.customer_name_ru or "Не указан",
+        customer_bin=contract.customer_bin,
+        amount=round(contract.contract_sum_wnds or contract.contract_sum or 0, 2),
+        status=get_contract_status_name(contract),
+        status_bucket=status_bucket,
+        procurement_method=get_trade_method_name(tender.ref_trade_methods_id) if tender else "Не указан",
+        tender_number=tender.number_anno if tender else (contract.trd_buy_number_anno or None),
+        tender_id=tender.id if tender else (contract.trd_buy_id or None),
+    )
+
+
+def contract_matches_filters(
+    item: ContractRegistryItem,
+    query: Optional[str],
+    status_bucket: Optional[str],
+    date_from: Optional[str],
+    date_to: Optional[str],
+    amount_from: Optional[float],
+    amount_to: Optional[float],
+) -> bool:
+    if query:
+        needle = query.strip().lower()
+        haystack = " ".join(
+            [
+                item.contract_number,
+                item.contract_number_sys,
+                item.supplier_name,
+                item.customer_name,
+                item.tender_number or "",
+            ]
+        ).lower()
+        if needle not in haystack:
+            return False
+
+    if status_bucket and item.status_bucket != status_bucket:
+        return False
+
+    contract_date = parse_isoish_datetime(item.contract_date)
+    parsed_from = parse_isoish_datetime(date_from)
+    parsed_to = parse_isoish_datetime(date_to)
+
+    if parsed_from and contract_date and contract_date.date() < parsed_from.date():
+        return False
+    if parsed_to and contract_date and contract_date.date() > parsed_to.date():
+        return False
+
+    if amount_from is not None and item.amount < amount_from:
+        return False
+    if amount_to is not None and item.amount > amount_to:
+        return False
+
+    return True
+
+
+def sort_contract_registry_items(items: List[ContractRegistryItem], sort_by: str, sort_order: str) -> List[ContractRegistryItem]:
+    reverse = sort_order == "desc"
+
+    def sort_key(item: ContractRegistryItem):
+        if sort_by == "contract_date":
+            return parse_isoish_datetime(item.contract_date) or datetime.min
+        if sort_by == "amount":
+            return item.amount
+        if sort_by == "supplier_name":
+            return item.supplier_name.lower()
+        if sort_by == "customer_name":
+            return item.customer_name.lower()
+        if sort_by == "status":
+            return item.status.lower()
+        if sort_by == "procurement_method":
+            return item.procurement_method.lower()
+        if sort_by == "tender_number":
+            return (item.tender_number or "").lower()
+        return item.contract_number.lower()
+
+    return sorted(items, key=sort_key, reverse=reverse)
+
+
+async def list_local_contract_registry(
+    query: Optional[str] = None,
+    status_bucket: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    amount_from: Optional[float] = None,
+    amount_to: Optional[float] = None,
+    sort_by: str = "contract_date",
+    sort_order: str = "desc",
+    page: int = 1,
+    page_size: int = 20,
+) -> ContractRegistryResponse:
+    items: List[ContractRegistryItem] = []
+    profiles = await get_local_profiles_snapshot()
+    for profile in profiles:
+        supplier_name = profile.get("subject", {}).get("name_ru") or profile.get("subject", {}).get("full_name_ru") or "Не указан"
+        trd_buys = [TrdBuyRecord(**raw) for raw in profile.get("trd_buys", [])]
+        buy_by_id = {buy.id: buy for buy in trd_buys}
+        for raw_contract in profile.get("contracts", []):
+            contract = ContractRecord(**raw_contract)
+            tender = buy_by_id.get(contract.trd_buy_id)
+            item = build_contract_registry_item(contract, supplier_name, tender)
+            if contract_matches_filters(item, query, status_bucket, date_from, date_to, amount_from, amount_to):
+                items.append(item)
+
+    sorted_items = sort_contract_registry_items(items, sort_by, sort_order)
+    total = len(sorted_items)
+    start = max(0, (page - 1) * page_size)
+    end = start + page_size
+
+    return ContractRegistryResponse(
+        items=sorted_items[start:end],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def build_contract_history(contract: ContractRecord, acts: List[ActRecord]) -> List[ContractTimelineEvent]:
+    history: List[ContractTimelineEvent] = []
+
+    history.append(
+        ContractTimelineEvent(
+            date=contract.crdate,
+            title="Создание договора",
+            description=f"Договор зарегистрирован со статусом «{get_contract_status_name(contract)}».",
+            event_type="contract_created",
+        )
+    )
+
+    if contract.trd_buy_itogi_date_public:
+        history.append(
+            ContractTimelineEvent(
+                date=contract.trd_buy_itogi_date_public,
+                title="Публикация итогов закупки",
+                description=f"Связанное объявление {contract.trd_buy_number_anno or 'без номера'} перешло в стадию итогов.",
+                event_type="tender_results",
+            )
+        )
+
+    if contract.sign_reason_doc_date or contract.sign_reason_doc_name:
+        history.append(
+            ContractTimelineEvent(
+                date=contract.sign_reason_doc_date,
+                title="Основание подписания",
+                description=contract.sign_reason_doc_name or "Документ-основание не указан.",
+                event_type="sign_reason",
+            )
+        )
+
+    if contract.last_update_date and contract.last_update_date != contract.crdate:
+        history.append(
+            ContractTimelineEvent(
+                date=contract.last_update_date,
+                title="Последнее обновление карточки",
+                description=f"Карточка договора обновлена. Текущий статус: «{get_contract_status_name(contract)}».",
+                event_type="contract_updated",
+            )
+        )
+
+    for act in acts:
+        overdue = max(0, int(act.day_overdue or 0))
+        fine_sum = round(float(act.sum_fine or 0), 2)
+        fragments = [act.status_name_ru or f"Статус #{act.status_id}"]
+        if overdue:
+            fragments.append(f"просрочка {overdue} дн.")
+        if fine_sum:
+            fragments.append(f"штраф {fine_sum} ₸")
+        if act.sum_transfer:
+            fragments.append(f"к перечислению {round(float(act.sum_transfer), 2)} ₸")
+
+        history.append(
+            ContractTimelineEvent(
+                date=act.create_date_act or act.akt_date or act.approve_date,
+                title=f"Электронный акт {act.number_act}",
+                description=", ".join(fragments),
+                event_type="act",
+            )
+        )
+
+    return sorted(
+        history,
+        key=lambda event: parse_isoish_datetime(event.date) or datetime.min,
+        reverse=True,
+    )
+
+
+async def get_local_contract_detail(contract_id: int) -> Optional[ContractDetail]:
+    profiles = await get_local_profiles_snapshot()
+    for profile in profiles:
+        contracts = [ContractRecord(**raw) for raw in profile.get("contracts", [])]
+        target = next((contract for contract in contracts if contract.id == contract_id), None)
+        if not target:
+            continue
+
+        trd_buys = [TrdBuyRecord(**raw) for raw in profile.get("trd_buys", [])]
+        supplier_name = profile.get("subject", {}).get("name_ru") or profile.get("subject", {}).get("full_name_ru") or "Не указан"
+        supplier_addresses = [SubjectAddress(**raw) for raw in profile.get("subject_addresses", [])]
+        primary_supplier_address = next(
+            (address for address in supplier_addresses if address.address_type == 1),
+            supplier_addresses[0] if supplier_addresses else None,
+        )
+        supplier_party = ContractPartyInfo(
+            name=supplier_name,
+            bin=profile.get("subject", {}).get("bin") or target.supplier_biin,
+            region=profile.get("summary", {}).get("region_name"),
+            address=primary_supplier_address.address if primary_supplier_address else None,
+            status="Активный",
+        )
+        customer_party = ContractPartyInfo(
+            name=target.customer_name_ru or "Не указан",
+            bin=target.customer_bin or None,
+            region=None,
+            address=None,
+            status="Действующий заказчик" if target.customer_bin else None,
+        )
+        buy_by_id = {buy.id: buy for buy in trd_buys}
+        tender = buy_by_id.get(target.trd_buy_id)
+        units = [ContractUnitRecord(**raw) for raw in profile.get("contract_units", []) if int(raw.get("contract_id") or 0) == target.id]
+        acts = [
+            ActRecord(**raw)
+            for raw in profile.get("acts", [])
+            if int(raw.get("contract_id") or 0) == target.id or int(raw.get("contract_root_id") or 0) == target.root_id
+        ]
+        history = build_contract_history(target, acts)
+        overdue_acts = [act for act in acts if is_overdue_act(act)]
+        total_transferred = round(sum(float(act.sum_transfer or 0) for act in acts), 2)
+        amount = round(target.contract_sum_wnds or target.contract_sum or 0, 2)
+        execution_status = {
+            "label": get_contract_status_name(target),
+            "status_bucket": get_contract_status_bucket(target),
+            "total_acts": len(acts),
+            "overdue_acts": len(overdue_acts),
+            "total_transferred": total_transferred,
+            "total_fines": round(sum(float(act.sum_fine or 0) for act in acts), 2),
+            "completion_percent": round(min(100.0, (total_transferred / amount) * 100), 1) if amount > 0 else 0.0,
+        }
+
+        return ContractDetail(
+            item=build_contract_registry_item(target, supplier_name, tender),
+            contract=target,
+            tender=tender,
+            units=units,
+            acts=sorted(acts, key=lambda act: parse_isoish_datetime(act.akt_date) or datetime.min, reverse=True),
+            history=history,
+            execution_status=execution_status,
+            supplier_party=supplier_party,
+            customer_party=customer_party,
+        )
+
+    return None
+
+
+def normalize_complaint_status(value: Optional[str]) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return "Статус не указан"
+    return normalized
+
+
+def map_raw_complaint(profile: Dict[str, Any], raw: Dict[str, Any]) -> ComplaintRegistryItem:
+    subject = profile.get("subject", {})
+    complaint_number = str(
+        raw.get("complaint_number")
+        or raw.get("number")
+        or raw.get("id")
+        or raw.get("complaint_id")
+        or ""
+    )
+    object_name = (
+        raw.get("object_name")
+        or raw.get("customer_name")
+        or raw.get("customer_name_ru")
+        or raw.get("trd_buy_name")
+        or raw.get("tender_name")
+        or "Не указан"
+    )
+    short_description = (
+        raw.get("short_description")
+        or raw.get("description")
+        or raw.get("reason")
+        or raw.get("summary")
+        or "Описание не указано"
+    )
+    full_text = (
+        raw.get("full_text")
+        or raw.get("text")
+        or raw.get("description")
+        or raw.get("content")
+        or short_description
+    )
+    applicant_name = (
+        raw.get("applicant_name")
+        or raw.get("supplier_name")
+        or raw.get("supplier_name_ru")
+        or subject.get("name_ru")
+        or "Не указан"
+    )
+    object_type = raw.get("object_type") or ("Тендер" if raw.get("tender_number") or raw.get("trd_buy_number_anno") else "Заказчик")
+
+    return ComplaintRegistryItem(
+        id=str(raw.get("id") or complaint_number or uuid.uuid4()),
+        complaint_number=complaint_number or str(raw.get("id") or ""),
+        date_submitted=raw.get("date") or raw.get("date_submitted") or raw.get("submitted_at") or raw.get("created_at") or raw.get("crdate"),
+        applicant_name=applicant_name,
+        applicant_identifier=raw.get("applicant_identifier") or raw.get("applicant_bin") or raw.get("supplier_biin") or raw.get("supplier_bin"),
+        supplier_name=raw.get("supplier_name") or raw.get("supplier_name_ru") or subject.get("name_ru"),
+        customer_name=raw.get("customer_name") or raw.get("customer_name_ru"),
+        object_type=object_type,
+        object_name=object_name,
+        status=normalize_complaint_status(raw.get("status")),
+        short_description=short_description,
+        full_text=full_text,
+        tender_number=raw.get("tender_number") or raw.get("trd_buy_number_anno") or raw.get("announcement_number"),
+        related_tender_id=raw.get("related_tender_id") or raw.get("tender_id") or raw.get("trd_buy_id"),
+        related_contract_id=raw.get("related_contract_id") or raw.get("contract_id"),
+        decision=raw.get("decision") or raw.get("resolution") or raw.get("result"),
+        supplier_biin=raw.get("supplier_biin") or raw.get("supplier_bin") or subject.get("bin"),
+    )
+
+
+def complaint_matches_filters(
+    item: ComplaintRegistryItem,
+    query: Optional[str],
+    status: Optional[str],
+    date_from: Optional[str],
+    date_to: Optional[str],
+) -> bool:
+    if query:
+        needle = query.strip().lower()
+        haystack = " ".join(
+            [
+                item.complaint_number,
+                item.applicant_name,
+                item.object_name,
+                item.short_description,
+                item.tender_number or "",
+            ]
+        ).lower()
+        if needle not in haystack:
+            return False
+
+    if status and item.status != status:
+        return False
+
+    submitted_at = parse_isoish_datetime(item.date_submitted)
+    parsed_from = parse_isoish_datetime(date_from)
+    parsed_to = parse_isoish_datetime(date_to)
+
+    if parsed_from and submitted_at and submitted_at.date() < parsed_from.date():
+        return False
+    if parsed_to and submitted_at and submitted_at.date() > parsed_to.date():
+        return False
+
+    return True
+
+
+async def list_local_complaints(
+    query: Optional[str] = None,
+    status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> ComplaintRegistryResponse:
+    items: List[ComplaintRegistryItem] = []
+    profiles = await get_local_profiles_snapshot()
+    for profile in profiles:
+        complaint_lists = []
+        for key in ("complaints", "complaint_entries", "complaint_registry"):
+            value = profile.get(key)
+            if isinstance(value, list):
+                complaint_lists.extend(value)
+
+        for raw in complaint_lists:
+            if not isinstance(raw, dict):
+                continue
+            item = map_raw_complaint(profile, raw)
+            if complaint_matches_filters(item, query, status, date_from, date_to):
+                items.append(item)
+
+    items = sorted(items, key=lambda item: parse_isoish_datetime(item.date_submitted) or datetime.min, reverse=True)
+    total = len(items)
+    start = max(0, (page - 1) * page_size)
+    end = start + page_size
+
+    return ComplaintRegistryResponse(
+        items=items[start:end],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def get_local_complaint_detail(complaint_id: str) -> Optional[ComplaintDetail]:
+    registry = await list_local_complaints(page=1, page_size=10000)
+    item = next((entry for entry in registry.items if entry.id == complaint_id), None)
+    if not item:
+        return None
+    return ComplaintDetail(item=item)
+
+
+def build_global_ows_indexes(profiles: List[Dict[str, Any]]) -> Dict[str, Any]:
+    buy_by_id: Dict[int, TrdBuyRecord] = {}
+    apps_by_buy_id: Dict[int, List[Dict[str, Any]]] = {}
+    lot_entries_by_id: Dict[int, List[Dict[str, Any]]] = {}
+    contract_by_buy_id: Dict[int, ContractRecord] = {}
+    contract_unit_by_lot_id: Dict[int, ContractUnitRecord] = {}
+    company_by_bin: Dict[str, Company] = {}
+
+    for profile in profiles:
+        subject = profile.get("subject", {})
+        company_by_bin[str(subject.get("bin") or "")] = map_subject_to_company(subject)
+
+        for raw_buy in profile.get("trd_buys", []):
+            buy = TrdBuyRecord(**raw_buy)
+            buy_by_id[buy.id] = buy
+
+        contracts = [ContractRecord(**raw) for raw in profile.get("contracts", [])]
+        acts = [ActRecord(**raw) for raw in profile.get("acts", [])]
+        complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
+        trd_apps = [TrdAppRecord(**raw) for raw in profile.get("trd_apps", [])]
+        rnu_entries = [RnuEntry(**raw) for raw in profile.get("rnu_entries", [])]
+        assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
+        company_by_bin[str(subject.get("bin") or "")] = assessment["company"]
+
+        for contract in contracts:
+            contract_by_buy_id[contract.trd_buy_id] = contract
+
+        for raw_unit in profile.get("contract_units", []):
+            unit = ContractUnitRecord(**raw_unit)
+            contract_unit_by_lot_id[unit.lot_id] = unit
+
+        for raw_app in profile.get("trd_apps", []):
+            app = TrdAppRecord(**raw_app)
+            app_profile = {
+                "profile": profile,
+                "app": app,
+            }
+            apps_by_buy_id.setdefault(app.buy_id, []).append(app_profile)
+            for lot in app.app_lots:
+                lot_entries_by_id.setdefault(lot.lot_id, []).append(
+                    {
+                        "profile": profile,
+                        "app": app,
+                        "lot": lot,
+                    }
+                )
+
+    return {
+        "buy_by_id": buy_by_id,
+        "apps_by_buy_id": apps_by_buy_id,
+        "lot_entries_by_id": lot_entries_by_id,
+        "contract_by_buy_id": contract_by_buy_id,
+        "contract_unit_by_lot_id": contract_unit_by_lot_id,
+        "company_by_bin": company_by_bin,
+    }
+
+
+def derive_bid_status(buy: Optional[TrdBuyRecord], linked_contract: Optional[ContractRecord]) -> Dict[str, Any]:
+    if linked_contract:
+        return {"status": "Победила", "place": 1, "result": "Победитель"}
+    if buy and int(buy.ref_buy_status_id or 0) == 320:
+        return {"status": "Подана", "place": None, "result": "На рассмотрении"}
+    return {"status": "Отклонена", "place": None, "result": "Проиграл"}
+
+
+def build_announcement_bid_item(
+    app: TrdAppRecord,
+    supplier_name: str,
+    buy: Optional[TrdBuyRecord],
+    linked_contract: Optional[ContractRecord],
+) -> AnnouncementBidItem:
+    offered_amount = get_application_amount = sum(float(lot.amount or 0) for lot in app.app_lots)
+    status_payload = derive_bid_status(buy, linked_contract)
+    return AnnouncementBidItem(
+        application_id=app.id,
+        bid_number=app.prot_number or app.id,
+        buy_id=app.buy_id,
+        supplier_name=supplier_name,
+        supplier_bin=app.supplier_bin_iin,
+        offered_amount=round(offered_amount, 2),
+        date_apply=app.date_apply,
+        status=status_payload["status"],
+        place=status_payload["place"],
+        result=status_payload["result"],
+    )
+
+
+def build_announcement_lot_item(
+    lot: TrdAppLot,
+    contract_unit: Optional[ContractUnitRecord],
+    linked_contract: Optional[ContractRecord],
+    winner_name: Optional[str],
+) -> AnnouncementLotItem:
+    return AnnouncementLotItem(
+        lot_number=lot.lot_number or str(lot.lot_id),
+        lot_id=lot.lot_id,
+        name_ru=lot.name_ru,
+        quantity=lot.quantity,
+        amount=round(float((contract_unit.total_sum_wnds if contract_unit else 0) or lot.amount or 0), 2),
+        status=get_lot_status_label(lot.ref_lot_status_id),
+        contract_number=linked_contract.contract_number if linked_contract else None,
+        winner_name=winner_name,
+    )
+
+
+async def get_local_announcement_detail(announcement_id: int) -> Optional[AnnouncementDetail]:
+    profiles = await get_local_profiles_snapshot()
+    indexes = build_global_ows_indexes(profiles)
+    buy = indexes["buy_by_id"].get(announcement_id)
+    if not buy:
+        return None
+
+    app_entries = indexes["apps_by_buy_id"].get(announcement_id, [])
+    linked_contract = indexes["contract_by_buy_id"].get(announcement_id)
+
+    bids: List[AnnouncementBidItem] = []
+    lots: List[AnnouncementLotItem] = []
+    for entry in app_entries:
+        profile = entry["profile"]
+        app = entry["app"]
+        supplier_name = profile.get("subject", {}).get("name_ru") or "Не указан"
+        bid_item = build_announcement_bid_item(app, supplier_name, buy, linked_contract)
+        bids.append(bid_item)
+
+        for lot in app.app_lots:
+            contract_unit = indexes["contract_unit_by_lot_id"].get(lot.lot_id)
+            lots.append(build_announcement_lot_item(lot, contract_unit, linked_contract, supplier_name if linked_contract else None))
+
+    return AnnouncementDetail(announcement=buy, lots=lots, bids=bids)
+
+
+async def get_local_bid_detail(application_id: str) -> Optional[BidDetail]:
+    profiles = await get_local_profiles_snapshot()
+    indexes = build_global_ows_indexes(profiles)
+
+    for profile in profiles:
+        supplier_name = profile.get("subject", {}).get("name_ru") or "Не указан"
+        subject = profile.get("subject", {})
+        company = indexes["company_by_bin"].get(str(subject.get("bin") or ""))
+        for raw_app in profile.get("trd_apps", []):
+            app = TrdAppRecord(**raw_app)
+            if app.id != application_id:
+                continue
+            buy = indexes["buy_by_id"].get(app.buy_id)
+            linked_contract = indexes["contract_by_buy_id"].get(app.buy_id)
+            bid_item = build_announcement_bid_item(app, supplier_name, buy, linked_contract)
+            lots = [
+                build_announcement_lot_item(
+                    lot,
+                    indexes["contract_unit_by_lot_id"].get(lot.lot_id),
+                    linked_contract,
+                    supplier_name if linked_contract else None,
+                )
+                for lot in app.app_lots
+            ]
+            return BidDetail(
+                bid=bid_item,
+                announcement=buy,
+                supplier=company,
+                lots=lots,
+            )
+
+    return None
+
+
+async def get_local_lot_detail(lot_id: int) -> Optional[LotDetail]:
+    profiles = await get_local_profiles_snapshot()
+    indexes = build_global_ows_indexes(profiles)
+    lot_entries = indexes["lot_entries_by_id"].get(lot_id, [])
+    if not lot_entries:
+        return None
+
+    primary = lot_entries[0]
+    app = primary["app"]
+    lot = primary["lot"]
+    buy = indexes["buy_by_id"].get(app.buy_id)
+    linked_contract = indexes["contract_by_buy_id"].get(app.buy_id)
+    contract_unit = indexes["contract_unit_by_lot_id"].get(lot_id)
+
+    bids: List[AnnouncementBidItem] = []
+    for entry in lot_entries:
+        profile = entry["profile"]
+        entry_app = entry["app"]
+        supplier_name = profile.get("subject", {}).get("name_ru") or "Не указан"
+        bids.append(
+            build_announcement_bid_item(
+                entry_app,
+                supplier_name,
+                buy,
+                linked_contract if entry_app.buy_id == app.buy_id else None,
+            )
+        )
+
+    lot_item = build_announcement_lot_item(
+        lot,
+        contract_unit,
+        linked_contract,
+        bids[0].supplier_name if linked_contract and bids else None,
+    )
+    return LotDetail(lot=lot_item, announcement=buy, bids=bids)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -1309,6 +2225,109 @@ async def get_supplier_profile(
     if local_profile is None:
         raise HTTPException(status_code=404, detail="Поставщик не найден в локальной базе профилей")
     return local_profile
+
+
+@api_router.get("/contracts", response_model=ContractRegistryResponse)
+async def get_contract_registry(
+    query: Optional[str] = None,
+    status: Optional[str] = Query(default=None, pattern="^(in_progress|completed|terminated)$"),
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    amount_from: Optional[float] = None,
+    amount_to: Optional[float] = None,
+    sort_by: str = Query(default="contract_date", pattern="^(contract_number|contract_date|supplier_name|customer_name|amount|status|procurement_method|tender_number)$"),
+    sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    return await list_local_contract_registry(
+        query=query,
+        status_bucket=status,
+        date_from=date_from,
+        date_to=date_to,
+        amount_from=amount_from,
+        amount_to=amount_to,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@api_router.get("/contracts/{contract_id}", response_model=ContractDetail)
+async def get_contract_detail(
+    contract_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    detail = await get_local_contract_detail(contract_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Договор не найден в локальной базе")
+    return detail
+
+
+@api_router.get("/complaints", response_model=ComplaintRegistryResponse)
+async def get_complaints_registry(
+    query: Optional[str] = None,
+    status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    return await list_local_complaints(
+        query=query,
+        status=status,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@api_router.get("/complaints/{complaint_id}", response_model=ComplaintDetail)
+async def get_complaint_detail(
+    complaint_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    detail = await get_local_complaint_detail(complaint_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Жалоба не найдена в локальной базе")
+    return detail
+
+
+@api_router.get("/announcements/{announcement_id}", response_model=AnnouncementDetail)
+async def get_announcement_detail(
+    announcement_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    detail = await get_local_announcement_detail(announcement_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Объявление не найдено в локальной базе")
+    return detail
+
+
+@api_router.get("/bids/{application_id}", response_model=BidDetail)
+async def get_bid_detail(
+    application_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    detail = await get_local_bid_detail(application_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Заявка не найдена в локальной базе")
+    return detail
+
+
+@api_router.get("/lots/{lot_id}", response_model=LotDetail)
+async def get_lot_detail(
+    lot_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    detail = await get_local_lot_detail(lot_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Лот не найден в локальной базе")
+    return detail
 
 app.include_router(api_router)
 

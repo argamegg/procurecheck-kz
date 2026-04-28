@@ -1,7 +1,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
 
-export const DataTable = ({ columns, data, onRowClick, className }) => {
+export const DataTable = ({ columns, data, onRowClick, className, sortKey, sortDirection, onSort }) => {
   return (
     <div data-testid="data-table" className={cn('overflow-x-auto', className)}>
       <table className="w-full border-collapse">
@@ -12,7 +13,26 @@ export const DataTable = ({ columns, data, onRowClick, className }) => {
                 key={idx}
                 className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider"
               >
-                {col.header}
+                {col.sortable ? (
+                  <button
+                    type="button"
+                    onClick={() => onSort && onSort(col.key)}
+                    className="inline-flex items-center gap-1 hover:text-slate-900 transition-colors"
+                  >
+                    <span>{col.header}</span>
+                    {sortKey === col.key ? (
+                      sortDirection === 'asc' ? (
+                        <ChevronUp className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.5} />
+                    )}
+                  </button>
+                ) : (
+                  col.header
+                )}
               </th>
             ))}
           </tr>

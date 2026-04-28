@@ -40,4 +40,26 @@ export const companiesAPI = {
   getProfile: (bin) => apiClient.get(`/companies/${bin}/profile`),
 };
 
+export const contractsAPI = {
+  list: (params = {}) => apiClient.get('/contracts', { params }),
+  getById: (contractId) => apiClient.get(`/contracts/${contractId}`),
+};
+
+export const complaintsAPI = {
+  list: (params = {}) => apiClient.get('/complaints', { params }),
+  getById: (complaintId) => apiClient.get(`/complaints/${complaintId}`),
+};
+
+export const announcementsAPI = {
+  getById: (announcementId) => apiClient.get(`/announcements/${announcementId}`),
+};
+
+export const bidsAPI = {
+  getById: (applicationId) => apiClient.get(`/bids/${applicationId}`),
+};
+
+export const lotsAPI = {
+  getById: (lotId) => apiClient.get(`/lots/${lotId}`),
+};
+
 export default apiClient;

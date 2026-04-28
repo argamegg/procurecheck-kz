@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Search, Building2 } from 'lucide-react';
+import { LogOut, User, Search, Building2, FileCheck, ShieldAlert } from 'lucide-react';
 import { logout, getAuthUser } from '@/utils/auth';
 import {
   DropdownMenu,
@@ -28,6 +28,14 @@ export const Navbar = () => {
 
   const handleCompanies = () => {
     navigate('/companies');
+  };
+
+  const handleContracts = () => {
+    navigate('/contracts');
+  };
+
+  const handleComplaints = () => {
+    navigate('/complaints');
   };
 
   return (
@@ -66,6 +74,26 @@ export const Navbar = () => {
           >
             <Building2 className="w-4 h-4 mr-2" strokeWidth={1.5} />
             Участники
+          </Button>
+
+          <Button
+            onClick={handleContracts}
+            data-testid="navbar-contracts-btn"
+            variant="ghost"
+            className="text-white hover:bg-white/10"
+          >
+            <FileCheck className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Договоры
+          </Button>
+
+          <Button
+            onClick={handleComplaints}
+            data-testid="navbar-complaints-btn"
+            variant="ghost"
+            className="text-white hover:bg-white/10"
+          >
+            <ShieldAlert className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Жалобы
           </Button>
         </div>
 
