@@ -622,6 +622,8 @@ LOCAL_BUY_STATUS_LABELS = {
     310: "Опубликовано",
     320: "Прием заявок",
     340: "Итоги подведены",
+    380: "Отменено",
+    390: "Не состоялось",
 }
 
 LOCAL_TRADE_METHOD_LABELS = {
@@ -1959,9 +1961,36 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
     complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
     rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
 
-    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries, complaints)
     all_profiles = await get_local_profiles_snapshot()
     customer_context = build_customer_context(subject.model_dump(), all_profiles)
+
+    if int(subject.customer or 0) == 1:
+        trd_buy_map = {int(item.id): item for item in trd_buys}
+        for item in customer_context.get("announcements", []):
+            trd_buy_map[int(item.id)] = item
+        trd_buys = list(trd_buy_map.values())
+
+        application_map = {str(item.id): item for item in trd_apps}
+        for item in customer_context.get("applications", []):
+            application_map[str(item.id)] = item
+        trd_apps = list(application_map.values())
+
+        contract_map = {int(item.id): item for item in contracts}
+        for item in customer_context.get("contracts", []):
+            contract_map[int(item.id)] = item
+        contracts = list(contract_map.values())
+
+        act_map = {int(item.id): item for item in acts}
+        for item in customer_context.get("acts", []):
+            act_map[int(item.id)] = item
+        acts = list(act_map.values())
+
+        complaint_map = {str(item.id): item for item in complaints}
+        for item in customer_context.get("complaints", []):
+            complaint_map[str(item.id)] = item
+        complaints = list(complaint_map.values())
+
+    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries, complaints)
     role_analytics = build_role_analytics(subject.model_dump(), assessment, customer_context)
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
