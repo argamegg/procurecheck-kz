@@ -128,6 +128,18 @@ class DashboardStats(BaseModel):
     average_trust_score: int
 
 
+class ParticipantTrustScoreResponse(BaseModel):
+    bin: str
+    score: int
+    score_label: str
+    primary_role: str
+    status_label: str
+    risk_level: Optional[str] = None
+    risk_label: Optional[str] = None
+    weights: Dict[str, int]
+    metrics: Dict[str, Any]
+
+
 class ContractRegistryItem(BaseModel):
     id: int
     contract_number: str
@@ -590,7 +602,7 @@ def coerce_float(value: Any) -> float:
 def build_roles(subject: Dict[str, Any]) -> List[str]:
     roles: List[str] = []
 
-    if subject.get("supplier") == 1 or subject.get("type_supplier") in {1, 2, 3}:
+    if subject.get("supplier") == 1:
         roles.append("Поставщик")
     if subject.get("customer") == 1:
         roles.append("Заказчик")
@@ -606,7 +618,7 @@ def build_roles(subject: Dict[str, Any]) -> List[str]:
 
 def extract_subject_role_flags(subject_data: Dict[str, Any]) -> Dict[str, bool]:
     return {
-        "is_supplier": bool(int(subject_data.get("supplier") or 0) == 1 or subject_data.get("type_supplier") in {1, 2, 3}),
+        "is_supplier": bool(int(subject_data.get("supplier") or 0) == 1),
         "is_customer": bool(int(subject_data.get("customer") or 0) == 1),
         "is_organizer": bool(int(subject_data.get("organizer") or 0) == 1 or int(subject_data.get("is_single_org") or 0) == 1),
     }
@@ -853,7 +865,7 @@ def is_contract_related_complaint(complaint: ComplaintRecord) -> bool:
     return bool(complaint.related_contract_id) or any(marker in haystack for marker in ("договор", "исполн", "акт", "поставка", "срок"))
 
 
-def compute_company_assessment(
+def compute_supplier_trust_assessment(
     subject_data: Dict[str, Any],
     applications: List[TrdAppRecord],
     contracts: List[ContractRecord],
@@ -1131,6 +1143,63 @@ def compute_company_assessment(
     }
 
 
+def getParticipantScore(
+    subject_data: Dict[str, Any],
+    supplier_assessment: Dict[str, Any],
+    customer_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    role_flags = extract_subject_role_flags(subject_data)
+    score = supplier_assessment["company"].trust_score
+    score_type = "supplier"
+    label = "Supplier Trust Score"
+    risk_level = supplier_assessment["company"].risk_level
+    status_label = supplier_assessment["company"].risk_label or "Не указано"
+    customer_assessment = None
+    organizer_summary = None
+
+    if role_flags["is_customer"] and customer_context is not None:
+        customer_assessment = compute_customer_transparency_assessment(
+            subject_data,
+            customer_context.get("announcements", []),
+            customer_context.get("applications", []),
+            customer_context.get("contracts", []),
+            customer_context.get("acts", []),
+            customer_context.get("complaints", []),
+        )
+
+    organizer_count = int((customer_context or {}).get("organizer_announcements_count") or 0)
+    if role_flags["is_organizer"] or organizer_count > 0:
+        organizer_summary = {
+            "title": "Роль организатора",
+            "description": "Организатор выполняет техническую и процедурную функцию в закупке. Для него не применяется отдельный trust score, но в профиле учитывается объем сопровождаемых процедур.",
+            "organized_announcements": organizer_count,
+        }
+
+    if not role_flags["is_supplier"] and customer_assessment is not None:
+        score = int(customer_assessment["score"])
+        score_type = "customer"
+        label = customer_assessment["score_label"]
+        risk_level = "low" if score >= 80 else "medium" if score >= 60 else "high"
+        status_label = customer_assessment["bucket"]["label"]
+    elif not role_flags["is_supplier"] and organizer_summary is not None:
+        score = organizer_count
+        score_type = "organizer"
+        label = "Organizer Summary"
+        risk_level = "medium"
+        status_label = "Техническая роль"
+
+    return {
+        "score": score,
+        "type": score_type,
+        "label": label,
+        "risk_level": risk_level,
+        "status_label": status_label,
+        "roles": role_flags,
+        "customer_assessment": customer_assessment,
+        "organizer_summary": organizer_summary,
+    }
+
+
 def map_score_to_level(score: float, high_threshold: float = 80.0, medium_threshold: float = 60.0) -> Dict[str, str]:
     if score >= high_threshold:
         return {"level": "high", "label": "Высокая прозрачность"}
@@ -1397,15 +1466,15 @@ def compute_customer_transparency_assessment(
 def build_role_analytics(
     subject_data: Dict[str, Any],
     supplier_assessment: Dict[str, Any],
-    customer_context: Optional[Dict[str, Any]] = None,
+    participant_score: Dict[str, Any],
 ) -> Dict[str, Any]:
-    role_flags = extract_subject_role_flags(subject_data)
+    role_flags = participant_score["roles"]
     analytics: Dict[str, Any] = {
         "roles": role_flags,
-        "primary_role": "supplier" if role_flags["is_supplier"] else "customer" if role_flags["is_customer"] else "organizer" if role_flags["is_organizer"] else "participant",
-        "primary_score_label": "Supplier Trust Score",
-        "primary_score_value": supplier_assessment["company"].trust_score,
-        "primary_status_label": supplier_assessment["company"].risk_label,
+        "primary_role": participant_score["type"],
+        "primary_score_label": participant_score["label"],
+        "primary_score_value": participant_score["score"],
+        "primary_status_label": participant_score["status_label"],
         "supplier": None,
         "customer": None,
         "organizer": None,
@@ -1421,36 +1490,116 @@ def build_role_analytics(
             "assessment": supplier_assessment["risk_assessment"],
         }
 
-    if role_flags["is_customer"] and customer_context is not None:
-        customer_assessment = compute_customer_transparency_assessment(
-            subject_data,
-            customer_context.get("announcements", []),
-            customer_context.get("applications", []),
-            customer_context.get("contracts", []),
-            customer_context.get("acts", []),
-            customer_context.get("complaints", []),
-        )
+    customer_assessment = participant_score.get("customer_assessment")
+    if role_flags["is_customer"] and customer_assessment is not None:
         analytics["customer"] = customer_assessment
-        if not role_flags["is_supplier"]:
-            analytics["primary_role"] = "customer"
-            analytics["primary_score_label"] = customer_assessment["score_label"]
-            analytics["primary_score_value"] = customer_assessment["score"]
-            analytics["primary_status_label"] = customer_assessment["bucket"]["label"]
 
-    organizer_count = int((customer_context or {}).get("organizer_announcements_count") or 0)
-    if role_flags["is_organizer"] or organizer_count > 0:
-        analytics["organizer"] = {
-            "title": "Роль организатора",
-            "description": "Организатор выполняет техническую и процедурную функцию в закупке. Для него не применяется отдельный trust score, но в профиле учитывается объем сопровождаемых процедур.",
-            "organized_announcements": organizer_count,
-        }
-        if analytics["primary_role"] == "participant":
-            analytics["primary_role"] = "organizer"
-            analytics["primary_score_label"] = "Организованные процедуры"
-            analytics["primary_score_value"] = organizer_count
-            analytics["primary_status_label"] = "Техническая роль"
+    organizer_summary = participant_score.get("organizer_summary")
+    if organizer_summary is not None:
+        analytics["organizer"] = organizer_summary
 
     return analytics
+
+
+def apply_primary_role_score(company: Company, role_analytics: Dict[str, Any]) -> Company:
+    primary_role = role_analytics.get("primary_role")
+    if primary_role == "customer" and role_analytics.get("customer"):
+        customer_score = int(role_analytics.get("primary_score_value") or role_analytics["customer"]["score"])
+        company.trust_score = customer_score
+        company.risk_label = role_analytics.get("primary_status_label") or role_analytics["customer"]["bucket"]["label"]
+        company.risk_level = "low" if customer_score >= 80 else "medium" if customer_score >= 60 else "high"
+    elif primary_role == "organizer":
+        company.trust_score = int(role_analytics.get("primary_score_value") or 0)
+        company.risk_label = role_analytics.get("primary_status_label") or "Техническая роль"
+        company.risk_level = "medium"
+    return company
+
+
+def build_trust_score_payload(
+    company: Company,
+    role_analytics: Dict[str, Any],
+    risk_assessment: Dict[str, Any],
+) -> ParticipantTrustScoreResponse:
+    primary_role = role_analytics.get("primary_role") or "participant"
+    primary_score_label = role_analytics.get("primary_score_label") or "Supplier Trust Score"
+    primary_score_value = int(role_analytics.get("primary_score_value") or company.trust_score or 0)
+    primary_status_label = role_analytics.get("primary_status_label") or company.risk_label or "Не указано"
+    metrics: Dict[str, Any]
+
+    if primary_role == "customer" and role_analytics.get("customer"):
+        customer_metrics = role_analytics["customer"].get("metrics", {})
+        metrics = {
+            key: {
+                "value": value.get("value"),
+                "display_value": value.get("display_value"),
+                "description": value.get("description"),
+            }
+            for key, value in customer_metrics.items()
+        }
+    else:
+        metrics = {
+            "applications": risk_assessment.get("applications", 0),
+            "completed_contracts": risk_assessment.get("completed_contracts", 0),
+            "total_contracts": risk_assessment.get("total_contracts", 0),
+            "active_rnu_entries": risk_assessment.get("active_rnu_entries", 0),
+            "satisfied_complaints": risk_assessment.get("satisfied_complaints", 0),
+            "overdue_acts": risk_assessment.get("overdue_acts", 0),
+            "contract_value": risk_assessment.get("contract_value", 0),
+        }
+
+    return ParticipantTrustScoreResponse(
+        bin=company.bin,
+        score=primary_score_value,
+        score_label=primary_score_label,
+        primary_role=primary_role,
+        status_label=primary_status_label,
+        risk_level=company.risk_level,
+        risk_label=company.risk_label,
+        weights=ensure_trust_score_settings_file().get("weights", {}),
+        metrics=metrics,
+    )
+
+
+def log_participant_score(company: Company, role_analytics: Dict[str, Any], risk_assessment: Dict[str, Any]) -> None:
+    logger.debug(
+        "Participant analytics: method=role_analytics bin=%s primary_role=%s score=%s weights=%s metrics=%s",
+        company.bin,
+        role_analytics.get("primary_role"),
+        role_analytics.get("primary_score_value", company.trust_score),
+        risk_assessment.get("weights", {}),
+        {
+            "applications": risk_assessment.get("applications"),
+            "contracts": risk_assessment.get("total_contracts"),
+            "completed_contracts": risk_assessment.get("completed_contracts"),
+            "complaints": risk_assessment.get("total_complaints"),
+            "rnu_entries": risk_assessment.get("active_rnu_entries"),
+        },
+    )
+
+
+def resolve_participant_analytics(
+    subject_data: Dict[str, Any],
+    applications: List[TrdAppRecord],
+    contracts: List[ContractRecord],
+    acts: List[ActRecord],
+    rnu_entries: List[RnuEntry],
+    complaints: Optional[List[ComplaintRecord]] = None,
+    all_profiles: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    complaints = complaints or []
+    supplier_assessment = compute_supplier_trust_assessment(subject_data, applications, contracts, acts, rnu_entries, complaints)
+    customer_context = build_customer_context(subject_data, all_profiles) if all_profiles else None
+    participant_score = getParticipantScore(subject_data, supplier_assessment, customer_context)
+    role_analytics = build_role_analytics(subject_data, supplier_assessment, participant_score)
+    company = apply_primary_role_score(supplier_assessment["company"], role_analytics)
+    log_participant_score(company, role_analytics, supplier_assessment["risk_assessment"])
+    return {
+        "company": company,
+        "risk_indicators": supplier_assessment["risk_indicators"],
+        "risk_assessment": supplier_assessment["risk_assessment"],
+        "role_analytics": role_analytics,
+        "trust_score_payload": build_trust_score_payload(company, role_analytics, supplier_assessment["risk_assessment"]),
+    }
 
 
 def map_subject_to_company(subject: Dict[str, Any], is_blacklisted: bool = False) -> Company:
@@ -1673,8 +1822,8 @@ async def search_goszakup_companies(query: str) -> List[Company]:
     for subject in subject_items:
         bin_value = str(subject.get("bin") or subject.get("iin") or "")
         rnu_entries = [map_rnu_to_entry(item) for item in rnu_by_bin.get(bin_value, [])]
-        assessment = compute_company_assessment(subject, [], [], [], rnu_entries, [])
-        companies.append(assessment["company"])
+        resolved = resolve_participant_analytics(subject, [], [], [], rnu_entries, [])
+        companies.append(resolved["company"])
 
     return companies
 
@@ -1713,37 +1862,8 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
     contract_units: List[ContractUnitRecord] = []
     acts: List[ActRecord] = []
 
-    assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, [])
-    role_analytics = build_role_analytics(
-        subject,
-        assessment,
-        {
-            "announcements": trd_buys,
-            "applications": trd_apps,
-            "contracts": contracts,
-            "acts": acts,
-            "complaints": [],
-            "organizer_announcements_count": len(
-                [
-                    announcement
-                    for announcement in trd_buys
-                    if str(announcement.org_bin or "") == str(subject_record.bin)
-                    or int(announcement.org_pid or 0) == int(subject_record.pid or 0)
-                ]
-            ),
-        },
-    )
-    company = assessment["company"]
-    if role_analytics.get("primary_role") == "customer" and role_analytics.get("customer"):
-        company.trust_score = int(role_analytics["customer"]["score"])
-        company.risk_label = role_analytics["customer"]["bucket"]["label"]
-        company.risk_level = (
-            "low"
-            if role_analytics["customer"]["score"] >= 80
-            else "medium"
-            if role_analytics["customer"]["score"] >= 60
-            else "high"
-        )
+    resolved = resolve_participant_analytics(subject, trd_apps, contracts, acts, rnu_entries, [])
+    company = resolved["company"]
 
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
@@ -1762,8 +1882,8 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         "years_active": years_active,
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
         "data_source": "goszakup.gov.kz OWS v3",
-        "risk_assessment": assessment["risk_assessment"],
-        "role_analytics": role_analytics,
+        "risk_assessment": resolved["risk_assessment"],
+        "role_analytics": resolved["role_analytics"],
     }
 
     return SupplierProfile(
@@ -1779,7 +1899,7 @@ async def build_live_supplier_profile(bin_value: str) -> Optional[SupplierProfil
         acts=acts,
         complaints=[],
         rnu_entries=rnu_entries,
-        risk_indicators=assessment["risk_indicators"]
+        risk_indicators=resolved["risk_indicators"]
     )
 
 
@@ -1872,6 +1992,7 @@ async def search_local_companies(query: str) -> List[Company]:
         ]
     }
 
+    all_profiles = await get_local_profiles_snapshot()
     cursor = db.supplier_profiles.find(
         search_filter,
         {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1}
@@ -1885,8 +2006,8 @@ async def search_local_companies(query: str) -> List[Company]:
             acts = [ActRecord(**act) for act in item.get("acts", [])]
             rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
             complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
-            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
-            companies.append(assessment["company"])
+            resolved = resolve_participant_analytics(subject, trd_apps, contracts, acts, rnu_entries, complaints, all_profiles)
+            companies.append(resolved["company"])
 
     return companies
 
@@ -1916,6 +2037,7 @@ async def list_local_companies(
 
     mongo_filter: Dict[str, Any] = {"$and": mongo_filters} if mongo_filters else {}
 
+    all_profiles = await get_local_profiles_snapshot()
     cursor = (
         db.supplier_profiles
         .find(mongo_filter, {"_id": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1})
@@ -1932,8 +2054,8 @@ async def list_local_companies(
             acts = [ActRecord(**act) for act in item.get("acts", [])]
             rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
             complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
-            assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
-            company = assessment["company"]
+            resolved = resolve_participant_analytics(subject, trd_apps, contracts, acts, rnu_entries, complaints, all_profiles)
+            company = resolved["company"]
             if risk_level and company.risk_level != risk_level:
                 continue
             if is_blacklisted is not None and company.is_blacklisted != is_blacklisted:
@@ -1960,9 +2082,23 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
     acts = [ActRecord(**item) for item in profile.get("acts", [])]
     complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
     rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
+    base_trd_apps = list(trd_apps)
+    base_contracts = list(contracts)
+    base_acts = list(acts)
+    base_complaints = list(complaints)
 
     all_profiles = await get_local_profiles_snapshot()
     customer_context = build_customer_context(subject.model_dump(), all_profiles)
+
+    resolved = resolve_participant_analytics(
+        subject.model_dump(),
+        base_trd_apps,
+        base_contracts,
+        base_acts,
+        rnu_entries,
+        base_complaints,
+        all_profiles,
+    )
 
     if int(subject.customer or 0) == 1:
         trd_buy_map = {int(item.id): item for item in trd_buys}
@@ -1989,24 +2125,10 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         for item in customer_context.get("complaints", []):
             complaint_map[str(item.id)] = item
         complaints = list(complaint_map.values())
-
-    assessment = compute_company_assessment(subject.model_dump(), trd_apps, contracts, acts, rnu_entries, complaints)
-    role_analytics = build_role_analytics(subject.model_dump(), assessment, customer_context)
     completed_contracts = sum(1 for contract in contracts if is_completed_contract(contract))
     total_value = sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
     regdate = parse_isoish_datetime(subject.regdate) or parse_isoish_datetime(subject.crdate)
-    company = assessment["company"]
-
-    if role_analytics.get("primary_role") == "customer" and role_analytics.get("customer"):
-        company.trust_score = int(role_analytics["customer"]["score"])
-        company.risk_label = role_analytics["customer"]["bucket"]["label"]
-        company.risk_level = (
-            "low"
-            if role_analytics["customer"]["score"] >= 80
-            else "medium"
-            if role_analytics["customer"]["score"] >= 60
-            else "high"
-        )
+    company = resolved["company"]
 
     summary = {
         **profile.get("summary", {}),
@@ -2020,8 +2142,8 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         "completed_contracts": completed_contracts,
         "years_active": max(0, datetime.now().year - regdate.year) if regdate else 0,
         "average_contract_value": round(total_value / len(contracts)) if contracts else 0,
-        "risk_assessment": assessment["risk_assessment"],
-        "role_analytics": role_analytics,
+        "risk_assessment": resolved["risk_assessment"],
+        "role_analytics": resolved["role_analytics"],
     }
 
     return SupplierProfile(
@@ -2037,11 +2159,43 @@ async def get_local_supplier_profile(bin_value: str) -> Optional[SupplierProfile
         acts=acts,
         complaints=complaints,
         rnu_entries=rnu_entries,
-        risk_indicators=assessment["risk_indicators"],
+        risk_indicators=resolved["risk_indicators"],
     )
 
 
+async def get_local_participant_trust_score(bin_value: str) -> Optional[ParticipantTrustScoreResponse]:
+    profile = await db.supplier_profiles.find_one(
+        {"subject.bin": str(bin_value)},
+        {"_id": 0, "search_text": 0, "subject": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1},
+    )
+    if not profile:
+        seed_profiles = read_local_supplier_profiles_seed()
+        profile = next((item for item in seed_profiles if str(item.get("subject", {}).get("bin")) == str(bin_value)), None)
+    if not profile:
+        return None
+
+    subject = profile.get("subject", {})
+    trd_apps = [TrdAppRecord(**item) for item in profile.get("trd_apps", [])]
+    contracts = [ContractRecord(**item) for item in profile.get("contracts", [])]
+    acts = [ActRecord(**item) for item in profile.get("acts", [])]
+    complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
+    rnu_entries = [RnuEntry(**item) for item in profile.get("rnu_entries", [])]
+    all_profiles = await get_local_profiles_snapshot()
+    resolved = resolve_participant_analytics(subject, trd_apps, contracts, acts, rnu_entries, complaints, all_profiles)
+    payload = resolved["trust_score_payload"]
+    logger.info(
+        "Trust score resolved for bin=%s role=%s score=%s weights=%s metrics=%s",
+        payload.bin,
+        payload.primary_role,
+        payload.score,
+        payload.weights,
+        payload.metrics,
+    )
+    return payload
+
+
 async def get_local_dashboard_stats() -> DashboardStats:
+    all_profiles = await get_local_profiles_snapshot()
     cursor = db.supplier_profiles.find(
         {},
         {"_id": 0, "subject": 1, "trd_buys": 1, "trd_apps": 1, "contracts": 1, "acts": 1, "complaints": 1, "rnu_entries": 1}
@@ -2062,8 +2216,8 @@ async def get_local_dashboard_stats() -> DashboardStats:
         acts = [ActRecord(**act) for act in item.get("acts", [])]
         rnu_entries = [RnuEntry(**entry) for entry in item.get("rnu_entries", [])]
         complaints = [map_complaint_to_record(raw) for raw in item.get("complaints", [])]
-        assessment = compute_company_assessment(item.get("subject", {}), trd_apps, contracts, acts, rnu_entries, complaints)
-        company = assessment["company"]
+        resolved = resolve_participant_analytics(item.get("subject", {}), trd_apps, contracts, acts, rnu_entries, complaints, all_profiles)
+        company = resolved["company"]
 
         total_announcements += len(trd_buys)
         total_contract_value += sum(contract.contract_sum_wnds or contract.contract_sum for contract in contracts)
@@ -2505,8 +2659,6 @@ def build_global_ows_indexes(profiles: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     for profile in profiles:
         subject = profile.get("subject", {})
-        company_by_bin[str(subject.get("bin") or "")] = map_subject_to_company(subject)
-
         for raw_buy in profile.get("trd_buys", []):
             buy = TrdBuyRecord(**raw_buy)
             buy_by_id[buy.id] = buy
@@ -2516,8 +2668,8 @@ def build_global_ows_indexes(profiles: List[Dict[str, Any]]) -> Dict[str, Any]:
         complaints = [map_complaint_to_record(raw) for raw in profile.get("complaints", [])]
         trd_apps = [TrdAppRecord(**raw) for raw in profile.get("trd_apps", [])]
         rnu_entries = [RnuEntry(**raw) for raw in profile.get("rnu_entries", [])]
-        assessment = compute_company_assessment(subject, trd_apps, contracts, acts, rnu_entries, complaints)
-        company_by_bin[str(subject.get("bin") or "")] = assessment["company"]
+        resolved = resolve_participant_analytics(subject, trd_apps, contracts, acts, rnu_entries, complaints, profiles)
+        company_by_bin[str(subject.get("bin") or "")] = resolved["company"]
 
         for contract in contracts:
             contract_by_buy_id[contract.trd_buy_id] = contract
@@ -3847,6 +3999,25 @@ async def get_supplier_profile(
     if local_profile is None:
         raise HTTPException(status_code=404, detail="Поставщик не найден в локальной базе профилей")
     return local_profile
+
+
+@api_router.get("/participants/{bin}/trust-score", response_model=ParticipantTrustScoreResponse)
+async def get_participant_trust_score(
+    bin: str,
+    current_user: User = Depends(get_current_user)
+):
+    if goszakup_enabled():
+        live_profile = await build_live_supplier_profile(bin)
+        if live_profile is None:
+            raise HTTPException(status_code=404, detail="Участник не найден")
+        role_analytics = live_profile.summary.get("role_analytics", {})
+        risk_assessment = live_profile.summary.get("risk_assessment", {})
+        return build_trust_score_payload(live_profile.company, role_analytics, risk_assessment)
+
+    payload = await get_local_participant_trust_score(bin)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Участник не найден в локальной базе")
+    return payload
 
 
 @api_router.get("/contracts", response_model=ContractRegistryResponse)

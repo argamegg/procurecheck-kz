@@ -38,6 +38,7 @@ export const companiesAPI = {
     return apiClient.get('/companies/search', { params });
   },
   getProfile: (bin) => apiClient.get(`/companies/${bin}/profile`),
+  getTrustScore: (bin) => apiClient.get(`/participants/${bin}/trust-score`),
 };
 
 export const contractsAPI = {
