@@ -1,120 +1,144 @@
-# 🏛️ ProcureCheck KZ - Платформа аналитики госзакупок Казахстана
+# ProcureCheck KZ
 
-> Современная веб-платформа для анализа участников государственных закупок Казахстана: поставщиков, заказчиков и организаторов.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-procurecheck--kz.vercel.app-0f172a?style=for-the-badge&logo=vercel)](https://procurecheck-kz.vercel.app)
+[![Backend Docs](https://img.shields.io/badge/Backend-Render%20API%20Docs-16a34a?style=for-the-badge&logo=fastapi)](https://procurecheck-kz.onrender.com/docs)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-111827?style=for-the-badge&logo=github)](https://github.com/argamegg/procurecheck-kz)
 
-## 📋 О проекте
+ProcureCheck KZ — это веб-платформа для анализа участников государственных закупок Казахстана. Проект объединяет реестры, карточки участников, ролевую аналитику и административную панель управления demo-данными в одном интерфейсе.  
+Система моделирует реальную логику госзакупок: поставщиков, заказчиков, договоры, заявки, жалобы, РНУ и аналитические индикаторы.
 
-**ProcureCheck KZ** - это аналитическая система для работы с данными государственных закупок Казахстана. Платформа предоставляет интерфейс для проверки участников, просмотра реестров, анализа закупочной истории и расчета ролевой аналитики.
+## [screenshot]
 
-### ✨ Основные возможности
+## Основные возможности
 
-- 🔍 **Поиск участников** по БИН/ИИН или названию
-- 📊 **Профиль участника** с полной карточкой, реестрами и аналитикой
-- 📈 **Реестры объявлений, договоров, заявок, лотов, актов и жалоб**
-- ⚠️ **Анализ жалоб** и их статусов
-- 🚫 **Проверка РНУ**
-- 📉 **Supplier Trust Score** для поставщиков
-- 📘 **Customer Transparency Score** для заказчиков
-- 🛠️ **Admin Panel** для управления demo-данными и настройками формулы
-- 👥 **Ролевой доступ** (Администратор/Пользователь)
-- 🇷🇺 **Интерфейс на русском языке**
+- Поиск участников по БИН/ИИН и названию
+- Профиль участника с разделами: участник, объявления, заявки, лоты, договоры, акты, жалобы, РНУ, аналитика
+- Реестры участников, договоров и жалоб
+- Supplier Trust Score для поставщиков
+- Customer Transparency Score для заказчиков
+- Admin Panel для управления demo-данными и параметрами аналитики
+- Ролевой доступ: `admin` и `user`
 
-## 🎯 Демо учетные записи
+## Технологический стек
 
-| Email | Пароль | Роль |
-|-------|--------|------|
-| admin@procurecheck.kz | demo123 | Администратор |
-| user@procurecheck.kz | demo123 | Пользователь |
+### Backend
+- FastAPI
+- MongoDB + Motor
+- JWT auth
+- Pydantic
 
-## 🚀 Быстрый старт
+### Frontend
+- React
+- Tailwind CSS
+- shadcn/ui
+- Recharts
+- Axios
 
-### Для macOS 🍎
+### Инфраструктура
+- MongoDB Atlas
+- Render
+- Vercel
+- UptimeRobot
+- Docker / Docker Compose
+
+## Архитектура деплоя
+
+- **MongoDB Atlas** — основная база данных
+- **Render** — размещение backend API и Swagger-документации
+- **Vercel** — размещение frontend
+- **UptimeRobot** — мониторинг доступности backend через `/health`
+
+## Демо-аккаунты
+
+| Роль | Email | Пароль |
+|---|---|---|
+| Администратор | `admin@procurecheck.kz` | `demo123` |
+| Пользователь | `user@procurecheck.kz` | `demo123` |
+
+## Быстрый старт через Docker
 
 ```bash
-# 1. Установите зависимости
-brew install python node yarn mongodb-community
-brew services start mongodb-community
+cp .env.example .env
+docker compose up --build
+```
 
-# 2. Распакуйте и установите
-tar -xzf procurecheck-kz.tar.gz
-cd procurecheck-kz
+После запуска:
 
-# Backend
+- frontend: [http://localhost:3000](http://localhost:3000)
+- backend docs: [http://localhost:8001/docs](http://localhost:8001/docs)
+
+Для development-режима с hot reload:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+## Быстрый старт локально без Docker
+
+### 1. Backend
+
+```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+```
 
-# Frontend
-cd ../frontend
+### 2. Frontend
+
+```bash
+cd frontend
 yarn install
-
-# 3. Запустите
-cd ..
-./start-macos.sh
+yarn start
 ```
 
-После запуска `start-macos.sh`:
-- автоматически открываются `http://localhost:3000` и `http://localhost:8001/docs`
-- в этом же терминале показываются live-логи frontend и backend
-- остановка выполняется через `Ctrl+C`
+Приложение будет доступно по адресам:
 
-📖 **Подробная инструкция**: [README_MACOS.md](README_MACOS.md)
+- frontend: [http://localhost:3000](http://localhost:3000)
+- backend docs: [http://localhost:8001/docs](http://localhost:8001/docs)
 
-## 🏗️ Технологический стек
+## API-документация
 
-### Backend
-- **FastAPI** - современный веб-фреймворк
-- **MongoDB** - NoSQL база данных
-- **Motor** - асинхронный драйвер MongoDB
-- **JWT** - аутентификация
-- **Local Supplier Profiles DB** - локальная аналитическая база профилей, смоделированная по публичной структуре реестров goszakup
+- Production: [https://procurecheck-kz.onrender.com/docs](https://procurecheck-kz.onrender.com/docs)
+- Local: [http://localhost:8001/docs](http://localhost:8001/docs)
 
-### Frontend
-- **React 18** - библиотека для UI
-- **Tailwind CSS** - CSS фреймворк
-- **Shadcn UI** - библиотека компонентов
-- **Recharts** - графики и диаграммы
+Ключевые группы API:
 
-## 📁 Структура проекта
+- `auth` — авторизация
+- `companies` — поиск, каталог и профиль участника
+- `contracts` — реестр и детальная карточка договора
+- `complaints` — реестр жалоб
+- `participants/{bin}/trust-score` — единый расчет аналитики участника
+- `admin/*` — CRUD по demo-данным и настройки формулы
 
-```
+## Структура проекта
+
+```text
 procurecheck-kz/
-├── backend/              # Backend FastAPI
-├── frontend/             # Frontend React
-├── README.md             # Основная документация
-├── README_MACOS.md       # Инструкция для macOS
-├── start-macos.sh        # Запуск с live-логами
-└── stop-macos.sh         # Резервный скрипт остановки
+├── backend/
+│   ├── data/                 # Локальные demo-данные и настройки аналитики
+│   ├── scripts/              # Утилиты для генерации/расширения seed-данных
+│   ├── Dockerfile
+│   └── server.py             # Основной FastAPI backend
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── utils/
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── .env.example
+├── start-macos.sh
+└── README.md
 ```
 
-## 🔌 API Endpoints
+## Что важно знать
 
-- `POST /api/auth/login` - Вход в систему
-- `GET /api/companies/search` - Поиск участников
-- `GET /api/companies` - Реестр участников
-- `GET /api/companies/{bin}/profile` - Профиль участника
-- `GET /api/contracts` - Реестр договоров
-- `GET /api/complaints` - Реестр жалоб
-- `GET /api/participants/{bin}/trust-score` - Единый расчет score участника
-- `GET /api/admin/*` - Admin CRUD и настройки аналитики
+- Проект использует реалистичную demo-модель данных, близкую к структуре госзакупок
+- Seed локальной БД выполняется автоматически при первом запуске backend
+- Формулы аналитики централизованы на backend и используются одинаково в реестрах и профиле участника
 
-## 🗄️ Локальная база профилей
-
-Backend автоматически засеивает MongoDB локальным набором участников при первом запуске. Данные синтетические, но структура и поля построены по мотивам публичных реестров goszakup: участники, адреса, объявления, заявки, лоты, договоры, акты, жалобы, РНУ и аналитические показатели.
-
-Основной режим работы не требует внешнего API или developer token.
-
-При желании backend все еще умеет ходить в официальный `https://ows.goszakup.gov.kz/v3`, если в `backend/.env` задан:
-
-```env
-GOSZAKUP_API_TOKEN=your-developer-token
-```
-
-Без токена приложение работает на собственной локальной базе профилей.
-
-📚 **Документация API**: http://localhost:8001/docs
-
----
-
-**Made with ❤️ for Kazakhstan Public Procurement Analytics**
