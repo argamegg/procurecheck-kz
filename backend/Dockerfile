@@ -10,7 +10,7 @@ WORKDIR /app
 RUN python -m venv "$VENV_PATH"
 ENV PATH="$VENV_PATH/bin:$PATH"
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 
@@ -26,7 +26,7 @@ WORKDIR /app
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 COPY --from=builder /opt/venv /opt/venv
-COPY . /app
+COPY backend/ /app
 
 RUN chown -R appuser:appgroup /app
 
