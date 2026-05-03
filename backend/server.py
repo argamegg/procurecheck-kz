@@ -4132,6 +4132,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.on_event("startup")
 async def startup_seed_local_data():
     await ensure_local_supplier_profiles_seeded()

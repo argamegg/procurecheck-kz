@@ -2,16 +2,23 @@
 .DS_Store
 
 # Python
+__pycache__/
+.pytest_cache/
 backend/venv/
 backend/__pycache__/
 backend/.pytest_cache/
 *.pyc
+.coverage
+coverage/
 
 # Node
 frontend/node_modules/
 frontend/build/
 
 # Env
+.env
+.env.*
+!.env.example
 backend/.env
 frontend/.env
 
