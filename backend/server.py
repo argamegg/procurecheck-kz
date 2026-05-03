@@ -246,6 +246,32 @@ class AnnouncementBidItem(BaseModel):
     result: Optional[str] = None
 
 
+class TrdBuyRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    number_anno: str
+    name_ru: str
+    name_kz: Optional[str] = None
+    total_sum: float
+    count_lots: int
+    ref_trade_methods_id: int
+    ref_subject_type_id: int
+    customer_bin: str
+    customer_pid: int
+    customer_name_ru: str
+    customer_name_kz: Optional[str] = None
+    org_bin: str
+    org_pid: int
+    org_name_ru: str
+    org_name_kz: Optional[str] = None
+    publish_date: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    ref_buy_status_id: int
+    system_id: int = 3
+    index_date: Optional[str] = None
+
+
 class AnnouncementDetail(BaseModel):
     announcement: TrdBuyRecord
     lots: List[AnnouncementLotItem]
@@ -350,32 +376,6 @@ class RnuEntry(BaseModel):
     end_date: Optional[str] = None
     ref_reason_id: Optional[int] = None
     court_decision: Optional[str] = None
-
-
-class TrdBuyRecord(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: int
-    number_anno: str
-    name_ru: str
-    name_kz: Optional[str] = None
-    total_sum: float
-    count_lots: int
-    ref_trade_methods_id: int
-    ref_subject_type_id: int
-    customer_bin: str
-    customer_pid: int
-    customer_name_ru: str
-    customer_name_kz: Optional[str] = None
-    org_bin: str
-    org_pid: int
-    org_name_ru: str
-    org_name_kz: Optional[str] = None
-    publish_date: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    ref_buy_status_id: int
-    system_id: int = 3
-    index_date: Optional[str] = None
 
 
 class TrdAppLot(BaseModel):
