@@ -3,6 +3,43 @@
 
 set -e
 
+BACKEND_PID=""
+FRONTEND_PID=""
+BACKEND_TAIL_PID=""
+FRONTEND_TAIL_PID=""
+IS_CLEANED_UP=0
+
+cleanup() {
+    if [ "$IS_CLEANED_UP" -eq 1 ]; then
+        return
+    fi
+    IS_CLEANED_UP=1
+
+    echo ""
+    echo "🛑 Остановка ProcureCheck KZ..."
+
+    if [ -n "$BACKEND_TAIL_PID" ]; then
+        kill "$BACKEND_TAIL_PID" 2>/dev/null || true
+    fi
+
+    if [ -n "$FRONTEND_TAIL_PID" ]; then
+        kill "$FRONTEND_TAIL_PID" 2>/dev/null || true
+    fi
+
+    if [ -n "$BACKEND_PID" ]; then
+        kill "$BACKEND_PID" 2>/dev/null || true
+    fi
+
+    if [ -n "$FRONTEND_PID" ]; then
+        kill "$FRONTEND_PID" 2>/dev/null || true
+    fi
+
+    rm -f /tmp/procurecheck-backend.pid /tmp/procurecheck-frontend.pid
+    echo "✅ ProcureCheck KZ остановлен"
+}
+
+trap cleanup INT TERM EXIT
+
 echo "╔════════════════════════════════════════════╗"
 echo "║     Запуск ProcureCheck KZ                 ║"
 echo "╚════════════════════════════════════════════╝"
@@ -63,7 +100,7 @@ if [ -d "venv" ]; then
 fi
 
 # Запуск в фоне
-nohup uvicorn server:app --host 0.0.0.0 --port 8001 --reload > /tmp/procurecheck-backend.log 2>&1 &
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload --log-level info --access-log > /tmp/procurecheck-backend.log 2>&1 &
 BACKEND_PID=$!
 echo "✅ Backend запущен (PID: $BACKEND_PID)"
 echo ""
@@ -73,7 +110,7 @@ echo "▶️  Запуск Frontend..."
 cd ../frontend
 
 # Запуск в фоне
-nohup yarn start > /tmp/procurecheck-frontend.log 2>&1 &
+env BROWSER=none yarn start > /tmp/procurecheck-frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo "✅ Frontend запущен (PID: $FRONTEND_PID)"
 echo ""
@@ -96,12 +133,11 @@ echo "   • admin@procurecheck.kz / demo123 (Администратор)"
 echo "   • user@procurecheck.kz / demo123 (Пользователь)"
 echo ""
 echo "📝 Логи:"
-echo "   Backend:  tail -f /tmp/procurecheck-backend.log"
-echo "   Frontend: tail -f /tmp/procurecheck-frontend.log"
+echo "   В этом терминале будут показаны live-логи backend и frontend"
 echo ""
 echo "🛑 Остановка:"
-echo "   kill $BACKEND_PID $FRONTEND_PID"
-echo "   или: killall node python"
+echo "   Нажмите Ctrl+C в этом терминале"
+echo "   или используйте ./stop-macos.sh"
 echo ""
 
 # Сохранить PID для остановки
@@ -112,5 +148,16 @@ echo "$FRONTEND_PID" > /tmp/procurecheck-frontend.pid
 echo "🌍 Открываю браузер..."
 sleep 2
 open http://localhost:3000
+open http://localhost:8001/docs
 
 echo "✨ Готово! Приятной работы!"
+echo ""
+echo "📡 Live-логи сервисов:"
+
+tail -n 20 -f /tmp/procurecheck-backend.log | sed -u 's/^/[backend] /' &
+BACKEND_TAIL_PID=$!
+
+tail -n 20 -f /tmp/procurecheck-frontend.log | sed -u 's/^/[frontend] /' &
+FRONTEND_TAIL_PID=$!
+
+wait "$BACKEND_PID" "$FRONTEND_PID"

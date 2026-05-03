@@ -91,6 +91,11 @@ chmod +x start-macos.sh
 ./start-macos.sh
 ```
 
+Скрипт:
+- открывает `http://localhost:3000` и `http://localhost:8001/docs`
+- показывает live-логи backend и frontend в этом же терминале
+- останавливает оба сервиса по `Ctrl+C`
+
 Или запустите вручную в 2 терминалах:
 
 **Терминал 1:**
@@ -108,7 +113,8 @@ yarn start
 
 ### Шаг 7: Откройте приложение
 
-Откройте в браузере: **http://localhost:3000**
+Frontend: **http://localhost:3000**  
+API Docs: **http://localhost:8001/docs**
 
 **Демо вход:**
 - Email: `admin@procurecheck.kz`
@@ -122,7 +128,8 @@ yarn start
 # Используйте скрипт
 ./stop-macos.sh
 
-# Или вручную в терминалах нажмите Ctrl+C
+# Или, если приложение запущено через ./start-macos.sh,
+# просто нажмите Ctrl+C в том же терминале
 
 # Или остановите процессы на портах
 kill -9 $(lsof -ti:8001)
@@ -137,6 +144,7 @@ kill -9 $(lsof -ti:3000)
 procurecheck-kz/
 ├── backend/              # Backend FastAPI + MongoDB
 │   ├── server.py        # Главный файл приложения
+│   ├── data/            # Локальная demo-база и настройки аналитики
 │   └── requirements.txt # Python зависимости
 │
 ├── frontend/            # Frontend React
@@ -149,7 +157,8 @@ procurecheck-kz/
 ├── README.md           # Основная документация
 ├── README_MACOS.md     # Подробная инструкция для macOS
 ├── start-macos.sh      # Скрипт автозапуска
-└── stop-macos.sh       # Скрипт остановки
+├── stop-macos.sh       # Скрипт остановки
+└── README.md           # Краткое описание проекта
 ```
 
 ---
@@ -219,9 +228,10 @@ yarn install
    ```
    - Должен подключиться к MongoDB
 
-5. **Локальные профили**:
+5. **Локальная demo-база**:
    - При первом старте backend автоматически создаст коллекцию `supplier_profiles`
-   - Поиск и карточка поставщика будут работать даже без токена goszakup
+   - Будут доступны участники, объявления, заявки, договоры, акты, жалобы и РНУ
+   - Аналитика участников будет работать даже без токена goszakup
 
 ---
 

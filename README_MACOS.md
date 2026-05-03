@@ -53,7 +53,20 @@ EOF
 
 ### 3️⃣ Запустите приложение
 
-Откройте **2 терминала**:
+Рекомендуемый способ:
+
+```bash
+cd ~/Downloads/procurecheck-kz
+chmod +x start-macos.sh
+./start-macos.sh
+```
+
+Скрипт:
+- открывает `http://localhost:3000` и `http://localhost:8001/docs`
+- показывает live-логи backend и frontend в этом же терминале
+- останавливает сервисы по `Ctrl+C`
+
+Альтернативный способ: открыть **2 терминала** и запустить вручную.
 
 **Терминал 1 (Backend):**
 ```bash
@@ -70,7 +83,8 @@ yarn start
 
 ### 4️⃣ Откройте приложение
 
-Браузер откроется автоматически: **http://localhost:3000**
+Frontend: **http://localhost:3000**  
+API Docs: **http://localhost:8001/docs**
 
 **Демо вход:**
 - Email: `admin@procurecheck.kz`
@@ -78,24 +92,15 @@ yarn start
 
 ---
 
-## 🎯 Автоматический запуск
-
-Используйте скрипт `start-macos.sh`:
-
-```bash
-cd ~/Downloads/procurecheck-kz
-chmod +x start-macos.sh
-./start-macos.sh
-```
-
----
-
 ## 🛑 Остановка приложения
 
-В терминалах нажмите `Ctrl+C`
+Если приложение запущено через `./start-macos.sh`, нажмите `Ctrl+C` в том же терминале.
 
 Или:
 ```bash
+# Резервный скрипт остановки
+./stop-macos.sh
+
 # Остановить процессы на портах
 kill -9 $(lsof -ti:8001)  # Backend
 kill -9 $(lsof -ti:3000)  # Frontend
@@ -132,4 +137,4 @@ source ~/.zshrc
 Если возникли проблемы:
 1. Проверьте что MongoDB запущен: `brew services list`
 2. Проверьте что порты свободны: `lsof -ti:8001 -ti:3000`
-3. Посмотрите логи в терминалах Backend и Frontend
+3. Посмотрите live-логи в терминале `start-macos.sh` или файлы `/tmp/procurecheck-backend.log` и `/tmp/procurecheck-frontend.log`
